@@ -7,16 +7,26 @@
           v-for="type in problemTypes"
           :key="type.value"
           @click="selectedType = type.value"
+          class="group relative whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all duration-300"
           :class="[
-            'whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm',
             selectedType === type.value
-              ? 'border-blue-500 text-blue-600'
+              ? 'border-indigo-500 text-indigo-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           ]"
         >
-          <i :class="type.icon" class="mr-2"></i>
-          {{ type.label }}
-          <span class="ml-2 text-gray-400">({{ type.count }})</span>
+          <div class="flex items-center space-x-2">
+            <i :class="[
+              type.icon,
+              'transition-transform duration-300 group-hover:scale-110',
+              selectedType === type.value ? 'animate-bounce-small' : ''
+            ]"></i>
+            <span>{{ type.label }}</span>
+            <span class="ml-2 text-gray-400 group-hover:text-gray-500 transition-colors">
+              ({{ type.count }})
+            </span>
+          </div>
+          <!-- 悬浮光效 -->
+          <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50 group-hover:to-purple-50 transition-colors duration-300 rounded-lg -z-10"></div>
         </button>
       </nav>
     </div>
@@ -27,42 +37,51 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">题目</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">难度</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">解答</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通过率</th>
+              <th v-for="header in tableHeaders" 
+                :key="header"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                {{ header }}
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="problem in problems" 
               :key="problem.id"
               @click="goToProblem(problem.id)"
-              class="hover:bg-gray-50 cursor-pointer"
+              class="hover:bg-gray-50 cursor-pointer transform hover:-translate-y-0.5 transition-all duration-300 group"
             >
-              <td class="px-6 py-4 whitespace-nowrap">{{ problem.title }}</td>
+              <td class="px-6 py-4 whitespace-nowrap group-hover:text-indigo-600 transition-colors">
+                {{ problem.title }}
+                <!-- 题目悬浮光效 -->
+                <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50/30 group-hover:to-purple-50/30 transition-opacity duration-300 opacity-0 group-hover:opacity-100"></div>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span :class="{
-                  'px-2 py-1 text-xs rounded-full': true,
-                  'bg-green-100 text-green-800': problem.difficulty === 'easy',
-                  'bg-yellow-100 text-yellow-800': problem.difficulty === 'medium',
-                  'bg-red-100 text-red-800': problem.difficulty === 'hard'
+                  'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
+                  'bg-green-100 text-green-800 group-hover:bg-green-200': problem.difficulty === 'easy',
+                  'bg-yellow-100 text-yellow-800 group-hover:bg-yellow-200': problem.difficulty === 'medium',
+                  'bg-red-100 text-red-800 group-hover:bg-red-200': problem.difficulty === 'hard'
                 }">
                   {{ getDifficultyText(problem.difficulty) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span :class="{
-                  'px-2 py-1 text-xs rounded-full': true,
-                  'bg-green-100 text-green-800': problem.status === 'solved',
-                  'bg-yellow-100 text-yellow-800': problem.status === 'attempted',
-                  'bg-gray-100 text-gray-800': problem.status === 'todo'
+                  'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
+                  'bg-green-100 text-green-800 group-hover:bg-green-200': problem.status === 'solved',
+                  'bg-yellow-100 text-yellow-800 group-hover:bg-yellow-200': problem.status === 'attempted',
+                  'bg-gray-100 text-gray-800 group-hover:bg-gray-200': problem.status === 'todo'
                 }">
                   {{ problem.status }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ problem.solutions }}</td>
-              <td class="px-6 py-4 whitespace-nowrap">{{ problem.acceptanceRate }}%</td>
+              <td class="px-6 py-4 whitespace-nowrap group-hover:text-indigo-600 transition-colors">
+                {{ problem.solutions }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap group-hover:text-indigo-600 transition-colors">
+                {{ problem.acceptanceRate }}%
+              </td>
             </tr>
           </tbody>
         </table>
@@ -72,130 +91,158 @@
     <!-- 选择题和简答题的筛选区域 -->
     <template v-else>
       <!-- 分类标签展示区域 -->
-      <div class="mb-6">
+      <div class="mb-6 space-y-4">
         <!-- 主分类 -->
-        <div class="flex items-center space-x-2 mb-2">
+        <div class="flex items-center space-x-2">
           <span class="text-gray-600">主分类：</span>
-          <button 
-            v-for="category in primaryCategories" 
-            :key="category.id"
-            @click="selectPrimaryCategory(category.id)"
-            :class="[
-              'px-3 py-1 rounded-full text-sm',
-              filterParams.categoryId === String(category.id)
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            ]"
-          >
-            {{ category.categoryName }}
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              v-for="category in primaryCategories"
+              :key="category.id"
+              @click="selectPrimaryCategory(category.id)"
+              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5"
+              :class="[
+                filterParams.categoryId === String(category.id)
+                  ? 'bg-indigo-100 text-indigo-700 shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              {{ category.categoryName }}
+              <!-- 选中状态指示器 -->
+              <span 
+                class="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block transition-all duration-300"
+                :class="{ 'opacity-100 scale-100': filterParams.categoryId === String(category.id), 'opacity-0 scale-0': filterParams.categoryId !== String(category.id) }"
+              ></span>
+            </button>
+          </div>
         </div>
 
         <!-- 子分类 -->
-        <div class="flex items-center space-x-2 mb-2" v-if="subCategories.length">
+        <div class="flex items-center space-x-2">
           <span class="text-gray-600">子分类：</span>
-          <button 
-            v-for="category in subCategories" 
-            :key="category.id"
-            @click="selectSubCategory(category.id)"
-            :class="[
-              'px-3 py-1 rounded-full text-sm',
-              filterParams.categoryId === String(category.id)
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            ]"
-          >
-            {{ category.categoryName }}
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              v-for="category in subCategories"
+              :key="category.id"
+              @click="selectSubCategory(category.id)"
+              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5"
+              :class="[
+                filterParams.categoryId === String(category.id)
+                  ? 'bg-indigo-100 text-indigo-700 shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              {{ category.categoryName }}
+              <span 
+                class="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block transition-all duration-300"
+                :class="{ 'opacity-100 scale-100': filterParams.categoryId === String(category.id), 'opacity-0 scale-0': filterParams.categoryId !== String(category.id) }"
+              ></span>
+            </button>
+          </div>
         </div>
 
         <!-- 标签 -->
-        <div class="flex items-center space-x-2" v-if="labels.length">
+        <div class="flex items-center space-x-2">
           <span class="text-gray-600">标签：</span>
-          <button 
-            v-for="label in labels" 
-            :key="label.id"
-            @click="selectLabel(label.id)"
-            :class="[
-              'px-3 py-1 rounded-full text-sm',
-              filterParams.labelId === String(label.id)
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            ]"
-          >
-            {{ label.labelName }}
-          </button>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              v-for="label in labels"
+              :key="label.id"
+              @click="selectLabel(label.id)"
+              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5"
+              :class="[
+                filterParams.labelId === String(label.id)
+                  ? 'bg-indigo-100 text-indigo-700 shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ]"
+            >
+              {{ label.labelName }}
+              <span 
+                class="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block transition-all duration-300"
+                :class="{ 'opacity-100 scale-100': filterParams.labelId === String(label.id), 'opacity-0 scale-0': filterParams.labelId !== String(label.id) }"
+              ></span>
+            </button>
+          </div>
         </div>
       </div>
 
-      <!-- 题目列表 -->
-      <div class="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul class="divide-y divide-gray-200">
-          <li v-for="problem in shortAnswerProblems" 
+      <!-- 添加简答题列表 -->
+      <div class="mt-6">
+        <div class="grid gap-4">
+          <div v-for="problem in shortAnswerProblems" 
             :key="problem.id"
-            class="hover:bg-gray-50 cursor-pointer"
             @click="goToProblem(problem.id)"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer transform hover:-translate-y-1 transition-all duration-300 group"
           >
-            <div class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                  <div class="text-sm font-medium text-gray-900">{{ problem.subjectName }}</div>
-                  <span :class="{
-                    'px-2 py-1 text-xs rounded-full': true,
-                    'bg-yellow-100 text-yellow-800': problem.subjectDifficult === 1,
-                    'bg-red-100 text-red-800': problem.subjectDifficult === 2
-                  }">
-                    {{ problem.subjectDifficult === 1 ? '中等' : '困难' }}
-                  </span>
-                </div>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                {{ problem.subjectName }}
+              </h3>
+              <span :class="{
+                'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
+                'bg-yellow-100 text-yellow-800': problem.subjectDifficult === 1,
+                'bg-red-100 text-red-800': problem.subjectDifficult === 2
+              }">
+                {{ problem.subjectDifficult === 1 ? '中等' : '困难' }}
+              </span>
+            </div>
+            
+            <div class="flex items-center space-x-4 text-sm text-gray-500">
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-folder text-gray-400"></i>
+                <span>{{ problem.categoryName }}</span>
               </div>
-              <div class="mt-2 flex items-center space-x-4">
-                <div class="flex items-center space-x-2">
-                  <span class="text-xs text-gray-500">分类：</span>
-                  <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    {{ problem.categoryName }}
-                  </span>
-                  <span v-if="problem.subCategoryName" 
-                    class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs"
-                  >
-                    {{ problem.subCategoryName }}
-                  </span>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="text-xs text-gray-500">标签：</span>
-                  <span v-for="label in problem.labelName" 
-                    :key="label"
-                    class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs"
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-tag text-gray-400"></i>
+                <div class="flex gap-1">
+                  <span v-for="(label, index) in problem.labelName" 
+                    :key="index"
+                    class="px-2 py-0.5 bg-gray-100 rounded-full text-xs"
                   >
                     {{ label }}
                   </span>
                 </div>
               </div>
+              <div class="flex items-center space-x-2">
+                <i class="fas fa-star text-gray-400"></i>
+                <span>{{ problem.subjectScore }} 分</span>
+              </div>
             </div>
-          </li>
-        </ul>
-      </div>
 
-      <!-- 分页控件 -->
-      <div class="mt-4 flex justify-between items-center">
-        <div class="flex space-x-2">
+            <!-- 悬浮光效 -->
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50/30 group-hover:to-purple-50/30 transition-opacity duration-300 opacity-0 group-hover:opacity-100 rounded-lg"></div>
+          </div>
+        </div>
+
+        <!-- 分页器 -->
+        <div class="mt-6 flex justify-center space-x-2">
           <button 
-            class="pagination-button" 
-            :disabled="currentPage === 1"
             @click="currentPage--"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 rounded border transition-all duration-300"
+            :class="[
+              currentPage === 1 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'hover:bg-indigo-50 text-indigo-600'
+            ]"
           >
             上一页
           </button>
+          <span class="px-3 py-1 text-gray-600">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </span>
           <button 
-            class="pagination-button" 
-            :disabled="currentPage === totalPages"
             @click="currentPage++"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 rounded border transition-all duration-300"
+            :class="[
+              currentPage === totalPages 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'hover:bg-indigo-50 text-indigo-600'
+            ]"
           >
             下一页
           </button>
-        </div>
-        <div>
-          第 {{ currentPage }} 页，共 {{ totalPages }} 页
         </div>
       </div>
     </template>
@@ -241,7 +288,7 @@ const selectedType: Ref<string> = ref('programming')
 const problems: Problem[] = [
   {
     id: 3285,
-    title: '找到稳定山的下标',
+    title: '找到稳定山的��标',
     difficulty: 'easy',
     status: 'solved',
     solutions: 88,
@@ -373,7 +420,7 @@ const totalShortAnswers: Ref<number> = ref(0)
 const filterParams = ref({
   labelId: '' as string | number,
   categoryId: '' as string | number,
-  subjectType: 4,  // 默认简答题
+  subjectType: 4,  // 默���简答题
   subjectDifficult: 1
 })
 
@@ -433,9 +480,9 @@ const selectLabel = (labelId: number) => {
   handleFilterChange()
 }
 
-// 筛选处理
+// 统一的筛选处理函数
 const handleFilterChange = () => {
-  currentPage.value = 1
+  currentPage.value = 1 // 重置页码
   fetchShortAnswerProblems()
 }
 
@@ -487,6 +534,13 @@ const getDifficultyText = (difficulty: string) => {
   return map[difficulty as keyof typeof map]
 }
 
+// 监听分页变化
+watch(currentPage, () => {
+  if (selectedType.value !== 'programming') {
+    fetchShortAnswerProblems()
+  }
+})
+
 onMounted(async () => {
   // 从路由查询参数中获取题目类型和筛选条件
   const params = route.query
@@ -512,15 +566,59 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.pagination-button {
-  @apply px-3 py-1 rounded border;
+/* 添加小弹跳动画 */
+@keyframes bounce-small {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
 }
 
-.pagination-button:disabled {
-  @apply bg-gray-100 text-gray-400 cursor-not-allowed;
+.animate-bounce-small {
+  animation: bounce-small 2s infinite;
 }
 
-.pagination-button:not(:disabled) {
-  @apply hover:bg-blue-50 text-blue-500;
+/* 添加表格行悬浮效果 */
+tr {
+  position: relative;
+  isolation: isolate;
+}
+
+/* 添加渐入动画 */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* 优化标签切换动画 */
+.border-b-2 {
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+/* 添加按钮点击效果 */
+button {
+  transform: translateY(0);
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* 添加卡片悬浮效果 */
+.group {
+  position: relative;
+  isolation: isolate;
+}
+
+/* 添加标签悬浮效果 */
+.bg-gray-100 {
+  transition: all 0.2s ease;
+}
+
+.bg-gray-100:hover {
+  @apply bg-gray-200;
 }
 </style>
