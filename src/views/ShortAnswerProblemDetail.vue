@@ -39,21 +39,15 @@
             <textarea
               v-model="answer"
               class="w-full h-48 p-4 border rounded-lg font-mono text-sm resize-none"
-              :placeholder="'请在这里输入你的答案...'"
+              placeholder="请在这里输入你的答案..."
               @input="handleInput"
             ></textarea>
-            <div class="mt-2 text-sm text-gray-500 flex justify-between">
-              <span>已输入 {{ charCount }} 个字符</span>
-              <span>建议答题字数: 20-200字</span>
-            </div>
           </div>
 
           <!-- 参考答案区域 -->
           <div v-if="showReference" class="bg-yellow-50 rounded-lg p-6">
             <h3 class="text-lg font-medium text-gray-900 mb-4">参考答案：</h3>
-            <div class="prose max-w-none text-gray-700">
-              {{ problem.subjectParse }}
-            </div>
+            <div class="prose max-w-none text-gray-700" v-html="problem.subjectAnswer"></div>
           </div>
         </div>
 
@@ -78,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from '@vue/runtime-dom'
+import { ref, onMounted } from '@vue/runtime-dom'
 import type { Ref } from '@vue/runtime-core'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -91,6 +85,8 @@ interface ShortAnswerProblem {
   subjectDifficult: 1 | 2  // 1-中等 2-困难
   labelName: string[]
   subjectParse: string
+  subjectAnswer: string  // 添加 subjectAnswer 字段
+  subjectType: number    // 添加 subjectType 字段
 }
 
 const problem: Ref<ShortAnswerProblem> = ref({
@@ -98,13 +94,13 @@ const problem: Ref<ShortAnswerProblem> = ref({
   subjectName: '',
   subjectDifficult: 1,
   labelName: [],
-  subjectParse: ''
+  subjectParse: '',
+  subjectAnswer: '',  // 初始化 subjectAnswer
+  subjectType: 4     // 初始化 subjectType
 })
 
 const answer: Ref<string> = ref('')
 const showReference: Ref<boolean> = ref(false)
-
-const charCount = computed(() => answer.value.length)
 
 // 获取题目详情
 const fetchProblemDetail = async () => {
@@ -120,7 +116,13 @@ const fetchProblemDetail = async () => {
     })
     const data = await response.json()
     if (data.success) {
-      problem.value = data.data
+      // 确保是简答题
+      if (data.data.subjectType === 4) {
+        problem.value = data.data
+      } else {
+        // 如果不是简答题，可以添加错误处理
+        console.error('不是简答题类型')
+      }
     }
   } catch (error) {
     console.error('获取题目详情失败:', error)
@@ -133,10 +135,6 @@ const handleInput = (event: Event) => {
 }
 
 const submitAnswer = () => {
-  if (answer.value.trim().length < 20) {
-    alert('答案太短了，请至少输入20个字符')
-    return
-  }
   // 提交答案的逻辑
   console.log('提交答案:', answer.value)
 }
@@ -165,5 +163,38 @@ onMounted(() => {
 
 .prose p {
   @apply mb-4;
+}
+
+/* 添加一些基本的 HTML 内容样式 */
+/* 修改 :deep 选择器的使用方式 */
+:deep(.prose h1),
+:deep(.prose h2),
+:deep(.prose h3),
+:deep(.prose h4),
+:deep(.prose h5),
+:deep(.prose h6) {
+  @apply font-bold mb-4;
+}
+
+:deep(.prose ul),
+:deep(.prose ol) {
+  @apply pl-6 mb-4;
+}
+
+:deep(.prose ul) {
+  @apply list-disc;
+}
+
+:deep(.prose ol) {
+  @apply list-decimal;
+}
+
+:deep(.prose pre),
+:deep(.prose code) {
+  @apply bg-gray-100 rounded p-2 font-mono text-sm;
+}
+
+:deep(.prose blockquote) {
+  @apply border-l-4 border-gray-300 pl-4 italic;
 }
 </style> 
