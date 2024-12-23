@@ -24,7 +24,7 @@
         </div>
 
         <!-- Desktop Menu -->
-        <div class="hidden md:flex space-x-1">
+        <div class="hidden md:flex items-center space-x-8">
           <router-link 
             v-for="item in menuItems" 
             :key="item.path"
@@ -59,6 +59,96 @@
             <!-- 悬浮光效 -->
             <div class="absolute inset-0 rounded-lg bg-indigo-400/0 group-hover:bg-indigo-400/5 transition-colors duration-300"></div>
           </router-link>
+
+          <!-- 用户图标 -->
+          <div class="relative">
+            <template v-if="isLoggedIn && userInfo">
+              <button 
+                @click="toggleUserMenu"
+                class="flex items-center space-x-2 text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                <div class="relative w-8 h-8">
+                  <img 
+                    v-if="userInfo.avatar" 
+                    :src="userInfo.avatar" 
+                    class="w-full h-full rounded-full object-cover border-2 border-gray-200"
+                    alt="用户头像"
+                  >
+                  <div 
+                    v-else 
+                    class="w-full h-full rounded-full bg-gray-200 flex items-center justify-center"
+                  >
+                    <i class="fas fa-user text-gray-400"></i>
+                  </div>
+                  <div class="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                </div>
+                <span class="text-sm font-medium">{{ userInfo.nickName }}</span>
+              </button>
+              
+              <!-- 下拉菜单 -->
+              <div v-if="showUserMenu" 
+                class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50"
+              >
+                <div class="px-4 py-3 border-b border-gray-100">
+                  <div class="flex items-center space-x-3">
+                    <div class="relative w-12 h-12">
+                      <img 
+                        v-if="userInfo.avatar" 
+                        :src="userInfo.avatar" 
+                        class="w-full h-full rounded-full object-cover border-2 border-gray-200"
+                        alt="用户头像"
+                      >
+                      <div 
+                        v-else 
+                        class="w-full h-full rounded-full bg-gray-200 flex items-center justify-center"
+                      >
+                        <i class="fas fa-user text-gray-400 text-xl"></i>
+                      </div>
+                    </div>
+                    <div>
+                      <div class="text-sm font-medium text-gray-900">{{ userInfo.nickName }}</div>
+                      <div class="text-xs text-gray-500">{{ userInfo.email }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="px-4 py-2 text-sm text-gray-600">
+                  <div class="flex items-center space-x-2">
+                    <i class="fas fa-phone text-gray-400"></i>
+                    <span>{{ userInfo.phone }}</span>
+                  </div>
+                  <div class="flex items-center space-x-2 mt-1">
+                    <i class="fas fa-venus-mars text-gray-400"></i>
+                    <span>{{ userInfo.sex === 1 ? '男' : '女' }}</span>
+                  </div>
+                  <div class="mt-2 text-xs text-gray-500">
+                    <i class="fas fa-quote-left text-gray-400 mr-1"></i>
+                    {{ userInfo.introduce || '这个人很懒，什么都没写~' }}
+                  </div>
+                </div>
+                <div class="border-t border-gray-100 mt-2">
+                  <button 
+                    @click="handleLogout"
+                    class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    退出登录
+                  </button>
+                </div>
+              </div>
+            </template>
+            
+            <!-- 未登录状态 -->
+            <router-link 
+              v-else 
+              to="/login"
+              class="flex items-center space-x-2 text-gray-400 hover:text-indigo-600 transition-colors"
+            >
+              <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                <i class="fas fa-user text-gray-400"></i>
+              </div>
+              <span class="text-sm">未登录</span>
+            </router-link>
+          </div>
         </div>
 
         <!-- Mobile menu button -->
@@ -103,7 +193,7 @@
               <i :class="[item.icon, 'transition-transform group-hover:scale-110 duration-200']"></i>
               <span>{{ item.name }}</span>
             </span>
-            <!-- 移动��菜单项悬浮效果 -->
+            <!-- 移动菜单项悬浮效果 -->
             <div class="absolute inset-0 bg-gradient-to-r from-indigo-400/0 to-purple-400/0 group-hover:from-indigo-400/5 group-hover:to-purple-400/5 transition-colors duration-300"></div>
           </router-link>
         </div>
@@ -113,8 +203,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from '@vue/runtime-dom'
+import { ref, onMounted, onUnmounted, watch } from '@vue/runtime-dom'
 import type { Ref } from '@vue/runtime-core'
+import { useRouter } from 'vue-router'
 
 interface MenuItem {
   name: string
@@ -144,6 +235,68 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+})
+
+const isLoggedIn = ref(false)
+const showUserMenu = ref(false)
+
+interface UserInfo {
+  id: number
+  userName: string
+  nickName: string
+  email: string
+  phone: string
+  sex: number
+  avatar: string
+  status: number
+  introduce: string
+}
+
+const userInfo = ref<UserInfo | null>(null)
+
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value
+}
+
+const handleLogout = () => {
+  localStorage.removeItem('isLoggedIn')
+  localStorage.removeItem('loginId')
+  localStorage.removeItem('userInfo')
+  isLoggedIn.value = false
+  userInfo.value = null
+  showUserMenu.value = false
+  router.push('/')
+}
+
+// 监听用户信息变化
+watch(() => localStorage.getItem('userInfo'), (newValue) => {
+  if (newValue) {
+    userInfo.value = JSON.parse(newValue)
+    isLoggedIn.value = true
+  } else {
+    userInfo.value = null
+    isLoggedIn.value = false
+  }
+}, { immediate: true })
+
+// 添加 router 实例
+const router = useRouter()
+
+// 修改事件监听器的类型
+onMounted(() => {
+  document.addEventListener('click', (e: MouseEvent) => {
+    const target = e.target as HTMLElement
+    if (!target?.closest('.relative')) {
+      showUserMenu.value = false
+    }
+  })
+  
+  // 检查登录状态
+  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  const savedUserInfo = localStorage.getItem('userInfo')
+  if (savedUserInfo) {
+    userInfo.value = JSON.parse(savedUserInfo)
+  }
 })
 </script>
 

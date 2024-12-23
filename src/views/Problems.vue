@@ -90,89 +90,91 @@
 
     <!-- 选择题和简答题的筛选区域 -->
     <template v-else>
-      <!-- 分类标签展示区域 -->
-      <div class="mb-6 space-y-4">
-        <!-- 主分类 -->
-        <div class="flex items-center space-x-2">
-          <span class="text-gray-600">主分类：</span>
+      <!-- 分类导航区域 -->
+      <div class="mb-8">
+        <!-- 一级分类 -->
+        <div class="flex items-center space-x-2 mb-4">
+          <div class="text-gray-500 font-medium">分类：</div>
           <div class="flex flex-wrap gap-2">
             <button 
               v-for="category in primaryCategories"
               :key="category.id"
-              @click="selectPrimaryCategory(category.id)"
-              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5"
+              @click.stop="(e) => {
+                e.stopPropagation();
+                selectPrimaryCategory(category.id);
+              }"
+              class="px-4 py-2 rounded-lg transition-all duration-300"
               :class="[
                 filterParams.categoryId === String(category.id)
-                  ? 'bg-indigo-100 text-indigo-700 shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'bg-blue-500 text-white shadow-md'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
               ]"
             >
               {{ category.categoryName }}
-              <!-- 选中状态指示器 -->
-              <span 
-                class="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block transition-all duration-300"
-                :class="{ 'opacity-100 scale-100': filterParams.categoryId === String(category.id), 'opacity-0 scale-0': filterParams.categoryId !== String(category.id) }"
-              ></span>
             </button>
           </div>
         </div>
 
-        <!-- 子分类 -->
-        <div class="flex items-center space-x-2">
-          <span class="text-gray-600">子分类：</span>
-          <div class="flex flex-wrap gap-2">
-            <button 
-              v-for="category in subCategories"
-              :key="category.id"
-              @click="selectSubCategory(category.id)"
-              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5"
-              :class="[
-                filterParams.categoryId === String(category.id)
-                  ? 'bg-indigo-100 text-indigo-700 shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              ]"
-            >
-              {{ category.categoryName }}
-              <span 
-                class="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block transition-all duration-300"
-                :class="{ 'opacity-100 scale-100': filterParams.categoryId === String(category.id), 'opacity-0 scale-0': filterParams.categoryId !== String(category.id) }"
-              ></span>
-            </button>
+        <!-- 二级分类和标签 -->
+        <div class="flex items-center space-x-4">
+          <!-- 二级分类 -->
+          <div v-if="subCategories.length" class="flex items-center space-x-2">
+            <i class="fas fa-chevron-right text-gray-400"></i>
+            <div class="flex flex-wrap gap-2">
+              <button 
+                v-for="category in subCategories"
+                :key="category.id"
+                @click.stop="(e) => {
+                  e.stopPropagation();
+                  selectSubCategory(category.id);
+                }"
+                class="px-3 py-1.5 rounded-lg text-sm transition-all duration-300"
+                :class="[
+                  filterParams.categoryId === String(category.id)
+                    ? 'bg-blue-100 text-blue-700 font-medium'
+                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                ]"
+              >
+                {{ category.categoryName }}
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- 标签 -->
-        <div class="flex items-center space-x-2">
-          <span class="text-gray-600">标签：</span>
-          <div class="flex flex-wrap gap-2">
-            <button 
-              v-for="label in labels"
-              :key="label.id"
-              @click="selectLabel(label.id)"
-              class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform hover:-translate-y-0.5"
-              :class="[
-                filterParams.labelId === String(label.id)
-                  ? 'bg-indigo-100 text-indigo-700 shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              ]"
-            >
-              {{ label.labelName }}
-              <span 
-                class="ml-1 w-1.5 h-1.5 rounded-full bg-indigo-500 inline-block transition-all duration-300"
-                :class="{ 'opacity-100 scale-100': filterParams.labelId === String(label.id), 'opacity-0 scale-0': filterParams.labelId !== String(label.id) }"
-              ></span>
-            </button>
+          <!-- 标签 -->
+          <div v-if="labels.length" class="flex items-center space-x-2">
+            <i class="fas fa-chevron-right text-gray-400"></i>
+            <div class="flex flex-wrap gap-2">
+              <button 
+                v-for="label in labels"
+                :key="label.id"
+                @click.stop="(e) => {
+                  e.stopPropagation();
+                  selectLabel(label.id);
+                }"
+                class="px-2 py-1 rounded text-sm transition-all duration-300"
+                :class="[
+                  filterParams.labelId === String(label.id)
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'text-gray-500 hover:bg-gray-50'
+                ]"
+              >
+                <i class="fas fa-tag text-xs mr-1 opacity-60"></i>
+                {{ label.labelName }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 添加简答题列表 -->
-      <div class="mt-6">
-        <div class="grid gap-4">
-          <div v-for="problem in shortAnswerProblems" 
-            :key="problem.id"
-            @click="goToProblem(problem.id)"
-            class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer transform hover:-translate-y-1 transition-all duration-300 group"
+      <!-- 题目列表 -->
+      <div class="space-y-4">
+        <div v-for="problem in shortAnswerProblems" 
+          :key="problem.id"
+          class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300"
+        >
+          <div 
+            class="cursor-pointer"
+            @click.stop="goToProblem(problem.id)"
           >
             <div class="flex items-center justify-between mb-2">
               <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
@@ -208,42 +210,39 @@
                 <span>{{ problem.subjectScore }} 分</span>
               </div>
             </div>
-
-            <!-- 悬浮光效 -->
-            <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50/30 group-hover:to-purple-50/30 transition-opacity duration-300 opacity-0 group-hover:opacity-100 rounded-lg"></div>
           </div>
         </div>
+      </div>
 
-        <!-- 分页器 -->
-        <div class="mt-6 flex justify-center space-x-2">
-          <button 
-            @click="currentPage--"
-            :disabled="currentPage === 1"
-            class="px-3 py-1 rounded border transition-all duration-300"
-            :class="[
-              currentPage === 1 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'hover:bg-indigo-50 text-indigo-600'
-            ]"
-          >
-            上一页
-          </button>
-          <span class="px-3 py-1 text-gray-600">
-            第 {{ currentPage }} / {{ totalPages }} 页
-          </span>
-          <button 
-            @click="currentPage++"
-            :disabled="currentPage === totalPages"
-            class="px-3 py-1 rounded border transition-all duration-300"
-            :class="[
-              currentPage === totalPages 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'hover:bg-indigo-50 text-indigo-600'
-            ]"
-          >
-            下一页
-          </button>
-        </div>
+      <!-- 分页器 -->
+      <div class="mt-6 flex justify-center space-x-2">
+        <button 
+          @click="currentPage--"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 rounded border transition-all duration-300"
+          :class="[
+            currentPage === 1 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : 'hover:bg-indigo-50 text-indigo-600'
+          ]"
+        >
+          上一页
+        </button>
+        <span class="px-3 py-1 text-gray-600">
+          第 {{ currentPage }} / {{ totalPages }} 页
+        </span>
+        <button 
+          @click="currentPage++"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 rounded border transition-all duration-300"
+          :class="[
+            currentPage === totalPages 
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+              : 'hover:bg-indigo-50 text-indigo-600'
+          ]"
+        >
+          下一页
+        </button>
       </div>
     </template>
   </div>
@@ -304,12 +303,12 @@ const problems: Problem[] = [
   }
 ]
 
-// 分页相关的状态
+// 分页���关的状态
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalPages = ref(0)
 
-// 修改接口类型定义
+// 修改接口类型���义
 interface Category {
   id: number
   categoryName: string
@@ -343,16 +342,9 @@ const fetchPrimaryCategories = async () => {
     const data = await response.json()
     if (data.success) {
       primaryCategories.value = data.data
-      
-      const savedCategoryId = sessionStorage.getItem('categoryId')
-      if (savedCategoryId) {
-        const category = data.data.find((c: Category) => String(c.id) === savedCategoryId)
-        if (category) {
-          await fetchSubCategories(category.id)
-        }
-      } else if (data.data.length > 0) {
-        await fetchSubCategories(data.data[0].id)
-      }
+      // ���自动选择第一个分类
+      subCategories.value = []
+      labels.value = []
     }
   } catch (error) {
     console.error('获取主分类失败:', error)
@@ -375,19 +367,11 @@ const fetchSubCategories = async (parentId: number) => {
     const data = await response.json()
     if (data.success) {
       subCategories.value = data.data
-      
-      const savedCategoryId = sessionStorage.getItem('categoryId')
-      if (savedCategoryId) {
-        const subCategory = data.data.find((c: Category) => String(c.id) === savedCategoryId)
-        if (subCategory) {
-          await fetchLabels(subCategory.id)
-        }
-      } else if (data.data.length > 0) {
-        await fetchLabels(data.data[0].id)
-      }
+      // 默认不自动选择第一个子分类
+      labels.value = []
     }
   } catch (error) {
-    console.error('获取子分类失败:', error)
+    console.error('获取子分类失��:', error)
   }
 }
 
@@ -418,9 +402,9 @@ const totalShortAnswers: Ref<number> = ref(0)
 
 // 修改筛选条件
 const filterParams = ref({
-  labelId: '' as string | number,
-  categoryId: '' as string | number,
-  subjectType: 4,  // 默���简答题
+  labelId: '' as string,
+  categoryId: '' as string,
+  subjectType: 4 as number,  // 改回只支持单个数字
   subjectDifficult: 1
 })
 
@@ -430,18 +414,16 @@ watch(selectedType, (newType) => {
     return
   }
   
-  // 只设置题目类型，不重置筛选条件
-  filterParams.value.subjectType = newType === 'choice' ? 3 : 4
+  // 修改选择题的 subjectType 判断
+  filterParams.value.subjectType = newType === 'choice' 
+    ? 1  // 选择题只显示 subjectType 为 1 的题目
+    : 4  // 简答题是 4
   
-  // 从 sessionStorage 恢复筛选条件
-  const savedCategoryId = sessionStorage.getItem('categoryId')
-  const savedLabelId = sessionStorage.getItem('labelId')
-  
-  if (savedCategoryId) {
-    filterParams.value.categoryId = savedCategoryId
-  }
-  if (savedLabelId) {
-    filterParams.value.labelId = savedLabelId
+  // 如果没有保存的状态，才重置条件
+  if (!sessionStorage.getItem('problemListState')) {
+    currentPage.value = 1
+    filterParams.value.categoryId = ''
+    filterParams.value.labelId = ''
   }
   
   fetchPrimaryCategories()
@@ -450,33 +432,38 @@ watch(selectedType, (newType) => {
 
 // 选择主分类
 const selectPrimaryCategory = async (categoryId: number) => {
-  filterParams.value.categoryId = filterParams.value.categoryId === categoryId ? '' : String(categoryId)
-  sessionStorage.setItem('categoryId', filterParams.value.categoryId)
-  if (filterParams.value.categoryId) {
-    await fetchSubCategories(categoryId)
-  } else {
+  // 如果点击的是当前选中的分类，则取消选中
+  if (filterParams.value.categoryId === categoryId.toString()) {
+    filterParams.value.categoryId = ''
     subCategories.value = []
     labels.value = []
+  } else {
+    // 否则选中新的分类
+    filterParams.value.categoryId = categoryId.toString()
+    await fetchSubCategories(categoryId)
   }
   handleFilterChange()
 }
 
 // 选择子分类
 const selectSubCategory = async (categoryId: number) => {
-  filterParams.value.categoryId = filterParams.value.categoryId === categoryId ? '' : String(categoryId)
-  sessionStorage.setItem('categoryId', filterParams.value.categoryId)  // 保存子分类ID
-  if (filterParams.value.categoryId) {
-    await fetchLabels(categoryId)
-  } else {
+  // 如果点击的是当前选中的子分类，则取消选中
+  if (filterParams.value.categoryId === categoryId.toString()) {
+    filterParams.value.categoryId = ''
     labels.value = []
+  } else {
+    // 否则选中新的子分类
+    filterParams.value.categoryId = categoryId.toString()
+    await fetchLabels(categoryId)
   }
   handleFilterChange()
 }
 
 // 选择标签
 const selectLabel = (labelId: number) => {
-  filterParams.value.labelId = filterParams.value.labelId === labelId ? '' : String(labelId)
-  sessionStorage.setItem('labelId', filterParams.value.labelId)
+  filterParams.value.labelId = filterParams.value.labelId === labelId.toString() 
+    ? '' 
+    : labelId.toString()
   handleFilterChange()
 }
 
@@ -509,12 +496,20 @@ const fetchShortAnswerProblems = async () => {
       totalPages.value = Math.ceil(data.data.total / pageSize.value)
     }
   } catch (error) {
-    console.error('获取简答题失败:', error)
+    console.error('获取题目失败:', error)
   }
 }
 
 // 跳转到题目详情
 const goToProblem = (id: number) => {
+  // 保存当前状态
+  sessionStorage.setItem('problemListState', JSON.stringify({
+    type: selectedType.value,
+    categoryId: filterParams.value.categoryId,
+    labelId: filterParams.value.labelId,
+    page: currentPage.value
+  }))
+  
   const path = {
     programming: '/problem',
     choice: '/choice',
@@ -542,24 +537,54 @@ watch(currentPage, () => {
 })
 
 onMounted(async () => {
-  // 从路由查询参数中获取题目类型和筛选条件
+  // 从路由查询参数中获取题目类型
   const params = route.query
   if (params.type) {
     selectedType.value = params.type.toString()
   }
   
   if (selectedType.value !== 'programming') {
-    filterParams.value.subjectType = selectedType.value === 'choice' ? 3 : 4
+    filterParams.value.subjectType = selectedType.value === 'choice' 
+      ? 1  // 选择题只显示 subjectType 为 1 的题目
+      : 4  // 简答题是 4
     
-    // 恢复筛选条件
-    if (params.categoryId) {
-      filterParams.value.categoryId = params.categoryId.toString()
-    }
-    if (params.labelId) {
-      filterParams.value.labelId = params.labelId.toString()
+    // 尝试恢复保存的状态
+    const savedState = sessionStorage.getItem('problemListState')
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState)
+        filterParams.value.categoryId = state.categoryId || ''
+        filterParams.value.labelId = state.labelId || ''
+        currentPage.value = state.page || 1
+        
+        // 先获取主分类
+        await fetchPrimaryCategories()
+        
+        // 如果有保存的分类ID，获取对应的子分类
+        if (state.categoryId) {
+          await fetchSubCategories(parseInt(state.categoryId))
+          // 如果有保存的标签ID，获取对应的标签
+          if (state.labelId) {
+            await fetchLabels(parseInt(state.categoryId))
+          }
+        }
+      } catch (e) {
+        console.error('Error restoring state:', e)
+        // 如果恢复失败，使用默认状态
+        filterParams.value.categoryId = ''
+        filterParams.value.labelId = ''
+        currentPage.value = 1
+        await fetchPrimaryCategories()
+      }
+    } else {
+      // 如果没有保存的状态，使用默认状态
+      filterParams.value.categoryId = ''
+      filterParams.value.labelId = ''
+      currentPage.value = 1
+      await fetchPrimaryCategories()
     }
     
-    await fetchPrimaryCategories()
+    // 获取题目列表
     fetchShortAnswerProblems()
   }
 })
@@ -592,7 +617,7 @@ tr {
   animation: fade-in 0.3s ease-out forwards;
 }
 
-/* 优化标签切换动画 */
+/* 优��标签切���动画 */
 .border-b-2 {
   transition: border-color 0.3s ease, color 0.3s ease;
 }
@@ -620,5 +645,35 @@ button:active {
 
 .bg-gray-100:hover {
   @apply bg-gray-200;
+}
+
+/* 添加一些过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 添加选中状态的动画 */
+button {
+  position: relative;
+  overflow: hidden;
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+button:active::after {
+  opacity: 0.1;
 }
 </style>
