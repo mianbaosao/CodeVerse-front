@@ -39,15 +39,22 @@
 <script setup lang="ts">
 import { ref } from '@vue/runtime-dom'
 import { useRouter } from 'vue-router'
+import request from '@/utils/request'
 
-interface ApiResponse<T> {
+// 移动到单独的类型文件
+interface ApiResponse<T = any> {
   success: boolean
   code: number
   message: string
   data: T
 }
 
-interface UserData {
+interface LoginResponse {
+  loginId: string
+  tokenValue: string
+}
+
+interface UserInfo {
   id: number
   userName: string
   nickName: string
@@ -71,42 +78,36 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    // 登录请求
-    const response = await fetch(`http://localhost:3011/user/doLogin?validCode=${validCode.value}`)
-    const data = await response.json() as ApiResponse<{ loginId: string }>
+    const response = await request.get<ApiResponse<LoginResponse>>(
+      `/auth/user/doLogin?validCode=${validCode.value}`,
+      { needAuth: false }
+    )
     
-    if (data.success) {
-      // 保存登录状态和 loginId
-      const loginId = data.data.loginId
+    if (response.success) {
+      // 保存登录状态、loginId 和 tokenValue
+      const { loginId, tokenValue } = response.data
       localStorage.setItem('isLoggedIn', 'true')
       localStorage.setItem('loginId', loginId)
+      localStorage.setItem('tokenValue', tokenValue)
       
-      // 获取用户信息
-      const userResponse = await fetch('http://localhost:3011/user/getUserInfo', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userName: loginId
-        })
-      })
-      const userData = await userResponse.json() as ApiResponse<UserData>
+      // 获取用户信息时需要认证头
+      const userResponse = await request.post<ApiResponse<UserInfo>>(
+        '/user/getUserInfo',
+        { userName: loginId }
+      )
       
-      if (userData.success) {
-        localStorage.setItem('userInfo', JSON.stringify(userData.data))
-        // 强制更新用户信息
+      if (userResponse.success) {
+        localStorage.setItem('userInfo', JSON.stringify(userResponse.data))
         window.dispatchEvent(new Event('storage'))
-        
-        // 返回之前的页面或首页
         const redirect = sessionStorage.getItem('loginRedirect') || '/'
         sessionStorage.removeItem('loginRedirect')
-        router.push(redirect)
+        await router.push(redirect)
+        window.location.reload()
       } else {
-        throw new Error(userData.message)
+        throw new Error(userResponse.message)
       }
     } else {
-      throw new Error(data.message)
+      throw new Error(response.message)
     }
   } catch (error) {
     console.error('登录失败:', error)

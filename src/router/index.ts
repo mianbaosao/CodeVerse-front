@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { Router, RouteLocationNormalized } from 'vue-router'
+import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
 import Home from '@/views/Home.vue'
 import Problems from '@/views/Problems.vue'
 import ProblemDetail from '@/views/ProblemDetail.vue'
@@ -95,7 +95,7 @@ const router = createRouter({
 router.beforeEach(async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
-  next: (to?: string | false | void) => void
+  next: NavigationGuardNext
 ) => {
   // 检查是否有 loginId
   const loginId = localStorage.getItem('loginId')

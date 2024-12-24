@@ -27,7 +27,18 @@ declare module 'vue-router' {
     forward(): void
     go(delta: number): void
     install(app: any): void
+    beforeEach(guard: NavigationGuard): void
   }
+
+  export interface NavigationGuard {
+    (
+      to: RouteLocationNormalized,
+      from: RouteLocationNormalized,
+      next: NavigationGuardNext
+    ): Promise<void> | void
+  }
+
+  export type NavigationGuardNext = (to?: string | false | void) => void
 
   export interface RouterOptions {
     history: RouterHistory

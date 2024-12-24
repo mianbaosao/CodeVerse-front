@@ -31,55 +31,127 @@
       </nav>
     </div>
 
+    <!-- 添加分类和标签筛选区域 -->
+    <div v-if="selectedType !== 'programming'" class="mb-6 space-y-4">
+      <!-- 主分类 -->
+      <div class="space-y-2">
+        <h3 class="text-sm font-medium text-gray-700">主分类</h3>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="category in primaryCategories"
+            :key="category.id"
+            @click="selectPrimaryCategory(category.id)"
+            class="px-3 py-1 rounded-full text-sm transition-all duration-300"
+            :class="[
+              filterParams.categoryId === category.id.toString()
+                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+            ]"
+          >
+            {{ category.categoryName }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 子分类 -->
+      <div v-if="subCategories.length > 0" class="space-y-2">
+        <h3 class="text-sm font-medium text-gray-700">子分类</h3>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="category in subCategories"
+            :key="category.id"
+            @click="selectSubCategory(category.id)"
+            class="px-3 py-1 rounded-full text-sm transition-all duration-300"
+            :class="[
+              filterParams.categoryId === category.id.toString()
+                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+            ]"
+          >
+            {{ category.categoryName }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 标签 -->
+      <div v-if="labels.length > 0" class="space-y-2">
+        <h3 class="text-sm font-medium text-gray-700">标签</h3>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="label in labels"
+            :key="label.id"
+            @click="selectLabel(label.id)"
+            class="px-3 py-1 rounded-full text-sm transition-all duration-300"
+            :class="[
+              filterParams.labelId === label.id.toString()
+                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+            ]"
+          >
+            {{ label.labelName }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- 编程题列表 -->
     <template v-if="selectedType === 'programming'">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th v-for="header in tableHeaders" 
-                :key="header"
-                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                {{ header }}
-              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">题目</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">难度</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">解答</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通过率</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="problem in problems" 
               :key="problem.id"
+              class="hover:bg-gray-50 transition-colors cursor-pointer"
               @click="goToProblem(problem.id)"
-              class="hover:bg-gray-50 cursor-pointer transform hover:-translate-y-0.5 transition-all duration-300 group"
             >
-              <td class="px-6 py-4 whitespace-nowrap group-hover:text-indigo-600 transition-colors">
-                {{ problem.title }}
-                <!-- 题目悬浮光效 -->
-                <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50/30 group-hover:to-purple-50/30 transition-opacity duration-300 opacity-0 group-hover:opacity-100"></div>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors">
+                  {{ problem.title }}
+                </div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span :class="{
-                  'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
-                  'bg-green-100 text-green-800 group-hover:bg-green-200': problem.difficulty === 'easy',
-                  'bg-yellow-100 text-yellow-800 group-hover:bg-yellow-200': problem.difficulty === 'medium',
-                  'bg-red-100 text-red-800 group-hover:bg-red-200': problem.difficulty === 'hard'
+                  'px-2 py-1 text-xs rounded-full': true,
+                  'bg-green-100 text-green-800': problem.difficulty === 'easy',
+                  'bg-yellow-100 text-yellow-800': problem.difficulty === 'medium',
+                  'bg-red-100 text-red-800': problem.difficulty === 'hard'
                 }">
                   {{ getDifficultyText(problem.difficulty) }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span :class="{
-                  'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
-                  'bg-green-100 text-green-800 group-hover:bg-green-200': problem.status === 'solved',
-                  'bg-yellow-100 text-yellow-800 group-hover:bg-yellow-200': problem.status === 'attempted',
-                  'bg-gray-100 text-gray-800 group-hover:bg-gray-200': problem.status === 'todo'
+                  'flex items-center space-x-1': true,
+                  'text-green-600': problem.status === 'solved',
+                  'text-yellow-600': problem.status === 'attempted',
+                  'text-gray-400': problem.status === 'todo'
                 }">
-                  {{ problem.status }}
+                  <i :class="{
+                    'fas': true,
+                    'fa-check-circle': problem.status === 'solved',
+                    'fa-clock': problem.status === 'attempted',
+                    'fa-circle': problem.status === 'todo'
+                  }"></i>
+                  <span class="text-sm">
+                    {{ problem.status === 'solved' ? '已解答' : 
+                       problem.status === 'attempted' ? '尝试过' : 
+                       '待解答' }}
+                  </span>
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap group-hover:text-indigo-600 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ problem.solutions }}
               </td>
-              <td class="px-6 py-4 whitespace-nowrap group-hover:text-indigo-600 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ problem.acceptanceRate }}%
               </td>
             </tr>
@@ -88,85 +160,8 @@
       </div>
     </template>
 
-    <!-- 选择题和简答题的筛选区域 -->
+    <!-- 选择题和简答题列表 -->
     <template v-else>
-      <!-- 分类导航区域 -->
-      <div class="mb-8">
-        <!-- 一级分类 -->
-        <div class="flex items-center space-x-2 mb-4">
-          <div class="text-gray-500 font-medium">分类：</div>
-          <div class="flex flex-wrap gap-2">
-            <button 
-              v-for="category in primaryCategories"
-              :key="category.id"
-              @click.stop="(e) => {
-                e.stopPropagation();
-                selectPrimaryCategory(category.id);
-              }"
-              class="px-4 py-2 rounded-lg transition-all duration-300"
-              :class="[
-                filterParams.categoryId === String(category.id)
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-              ]"
-            >
-              {{ category.categoryName }}
-            </button>
-          </div>
-        </div>
-
-        <!-- 二级分类和标签 -->
-        <div class="flex items-center space-x-4">
-          <!-- 二级分类 -->
-          <div v-if="subCategories.length" class="flex items-center space-x-2">
-            <i class="fas fa-chevron-right text-gray-400"></i>
-            <div class="flex flex-wrap gap-2">
-              <button 
-                v-for="category in subCategories"
-                :key="category.id"
-                @click.stop="(e) => {
-                  e.stopPropagation();
-                  selectSubCategory(category.id);
-                }"
-                class="px-3 py-1.5 rounded-lg text-sm transition-all duration-300"
-                :class="[
-                  filterParams.categoryId === String(category.id)
-                    ? 'bg-blue-100 text-blue-700 font-medium'
-                    : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                ]"
-              >
-                {{ category.categoryName }}
-              </button>
-            </div>
-          </div>
-
-          <!-- 标签 -->
-          <div v-if="labels.length" class="flex items-center space-x-2">
-            <i class="fas fa-chevron-right text-gray-400"></i>
-            <div class="flex flex-wrap gap-2">
-              <button 
-                v-for="label in labels"
-                :key="label.id"
-                @click.stop="(e) => {
-                  e.stopPropagation();
-                  selectLabel(label.id);
-                }"
-                class="px-2 py-1 rounded text-sm transition-all duration-300"
-                :class="[
-                  filterParams.labelId === String(label.id)
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-500 hover:bg-gray-50'
-                ]"
-              >
-                <i class="fas fa-tag text-xs mr-1 opacity-60"></i>
-                {{ label.labelName }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 题目列表 -->
       <div class="space-y-4">
         <div v-for="problem in shortAnswerProblems" 
           :key="problem.id"
@@ -180,20 +175,22 @@
               <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
                 {{ problem.subjectName }}
               </h3>
-              <span :class="{
-                'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
-                'bg-yellow-100 text-yellow-800': problem.subjectDifficult === 1,
-                'bg-red-100 text-red-800': problem.subjectDifficult === 2
-              }">
-                {{ problem.subjectDifficult === 1 ? '中等' : '困难' }}
-              </span>
+              <div class="flex items-center space-x-4">
+                <span :class="{
+                  'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
+                  'bg-yellow-100 text-yellow-800': problem.subjectDifficult === 1,
+                  'bg-red-100 text-red-800': problem.subjectDifficult === 2
+                }">
+                  {{ problem.subjectDifficult === 1 ? '中等' : '困难' }}
+                </span>
+                <span class="text-gray-500 text-sm">
+                  {{ problem.subjectScore }} 分
+                </span>
+              </div>
             </div>
             
+            <!-- 标签列表 -->
             <div class="flex items-center space-x-4 text-sm text-gray-500">
-              <div class="flex items-center space-x-2">
-                <i class="fas fa-folder text-gray-400"></i>
-                <span>{{ problem.categoryName }}</span>
-              </div>
               <div class="flex items-center space-x-2">
                 <i class="fas fa-tag text-gray-400"></i>
                 <div class="flex gap-1">
@@ -205,9 +202,13 @@
                   </span>
                 </div>
               </div>
+              <!-- 题目类型 -->
               <div class="flex items-center space-x-2">
-                <i class="fas fa-star text-gray-400"></i>
-                <span>{{ problem.subjectScore }} 分</span>
+                <i :class="[
+                  problem.subjectType === 4 ? 'fas fa-pen' : 'fas fa-check-circle',
+                  'text-gray-400'
+                ]"></i>
+                <span>{{ problem.subjectType === 4 ? '简答题' : '选择题' }}</span>
               </div>
             </div>
           </div>
@@ -256,25 +257,14 @@ import { useRouter, useRoute } from 'vue-router'
 const router = useRouter()
 const route = useRoute()
 
-interface Problem {
-  id: number
-  title: string
-  difficulty: 'easy' | 'medium' | 'hard'
-  status: 'solved' | 'attempted' | 'todo'
-  solutions: number
-  acceptanceRate: number
-}
-
 interface ShortAnswerProblem {
   id: number
   subjectName: string
   subjectDifficult: 1 | 2  // 1-中等 2-困难
-  subjectType: number
+  subjectType: number      // 4-简答题 1-选择题
   subjectScore: number
   subjectParse: string
-  labelName: string[]
-  categoryName: string    // 添加分类名称
-  subCategoryName?: string  // 添加子分类名称
+  labelName: string[]      // 标签数组
 }
 
 const problemTypes = [
@@ -284,31 +274,13 @@ const problemTypes = [
 ]
 
 const selectedType: Ref<string> = ref('programming')
-const problems: Problem[] = [
-  {
-    id: 3285,
-    title: '找到稳定山的��标',
-    difficulty: 'easy',
-    status: 'solved',
-    solutions: 88,
-    acceptanceRate: 92.9
-  },
-  {
-    id: 1,
-    title: '两数之和',
-    difficulty: 'easy',
-    status: 'solved',
-    solutions: 26251,
-    acceptanceRate: 54.4
-  }
-]
 
-// 分页���关的状态
+// 分页相关的状态
 const currentPage = ref(1)
 const pageSize = ref(10)
 const totalPages = ref(0)
 
-// 修改接口类型���义
+// 修改接口类型定义
 interface Category {
   id: number
   categoryName: string
@@ -327,7 +299,7 @@ const primaryCategories = ref<Category[]>([])
 const subCategories = ref<Category[]>([])
 const labels = ref<Label[]>([])
 
-// 获取主分类
+// 获取一级分类
 const fetchPrimaryCategories = async () => {
   try {
     const response = await fetch('http://localhost:3010/subject/category/queryPrimaryCategory', {
@@ -342,7 +314,6 @@ const fetchPrimaryCategories = async () => {
     const data = await response.json()
     if (data.success) {
       primaryCategories.value = data.data
-      // ���自动选择第一个分类
       subCategories.value = []
       labels.value = []
     }
@@ -351,7 +322,7 @@ const fetchPrimaryCategories = async () => {
   }
 }
 
-// 获取子分类
+// 获取二级分类
 const fetchSubCategories = async (parentId: number) => {
   try {
     const response = await fetch('http://localhost:3010/subject/category/queryCategoryByPrimary', {
@@ -360,18 +331,17 @@ const fetchSubCategories = async (parentId: number) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        parentId,
+        parentId: parentId,
         categoryType: 2
       })
     })
     const data = await response.json()
     if (data.success) {
       subCategories.value = data.data
-      // 默认不自动选择第一个子分类
       labels.value = []
     }
   } catch (error) {
-    console.error('获取子分类失��:', error)
+    console.error('获取子分类失败:', error)
   }
 }
 
@@ -384,7 +354,7 @@ const fetchLabels = async (categoryId: number) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        categoryId
+        categoryId: categoryId
       })
     })
     const data = await response.json()
@@ -400,49 +370,55 @@ const fetchLabels = async (categoryId: number) => {
 const shortAnswerProblems: Ref<ShortAnswerProblem[]> = ref([])
 const totalShortAnswers: Ref<number> = ref(0)
 
-// 修改筛选条件
-const filterParams = ref({
-  labelId: '' as string,
-  categoryId: '' as string,
-  subjectType: 4 as number,  // 改回只支持单个数字
-  subjectDifficult: 1
+// 定义过滤参数接口
+interface FilterParams {
+  subjectType: number
+  categoryId: string
+  labelId: string
+}
+
+// 初始化过滤参数
+const filterParams = ref<FilterParams>({
+  subjectType: 4,  // 默认为简答题类型
+  categoryId: '',
+  labelId: ''
 })
 
-// 监听 selectedType 变化
-watch(selectedType, (newType) => {
-  if (newType === 'programming') {
-    return
-  }
-  
-  // 修改选择题的 subjectType 判断
-  filterParams.value.subjectType = newType === 'choice' 
-    ? 1  // 选择题只显示 subjectType 为 1 的题目
-    : 4  // 简答题是 4
-  
-  // 如果没有保存的状态，才重置条件
-  if (!sessionStorage.getItem('problemListState')) {
-    currentPage.value = 1
+// 监听题目类型变化
+watch(() => selectedType.value, async (newType) => {
+  if (newType !== 'programming') {
+    // 设置题目类型
+    filterParams.value.subjectType = newType === 'choice' ? 1 : 4  // 选择题是1，简答题是4
+    // 重置筛选条件
     filterParams.value.categoryId = ''
     filterParams.value.labelId = ''
+    currentPage.value = 1
+    // 获取主分类
+    await fetchPrimaryCategories()
+    // 清空子分类和标签
+    subCategories.value = []
+    labels.value = []
+    // 获取题目列表
+    fetchShortAnswerProblems()
   }
-  
-  fetchPrimaryCategories()
-  fetchShortAnswerProblems()
 })
 
 // 选择主分类
 const selectPrimaryCategory = async (categoryId: number) => {
-  // 如果点击的是当前选中的分类，则取消选中
+  // 如果点击的是���前选中的分类，则取消选中
   if (filterParams.value.categoryId === categoryId.toString()) {
     filterParams.value.categoryId = ''
     subCategories.value = []
     labels.value = []
   } else {
-    // 否则选中新的分类
+    // 选中新的分类并获取子分类
     filterParams.value.categoryId = categoryId.toString()
     await fetchSubCategories(categoryId)
   }
-  handleFilterChange()
+  // 重置标签选择
+  filterParams.value.labelId = ''
+  // 重新获取题目列表
+  fetchShortAnswerProblems()  // 根据当前选中的分类获取题目
 }
 
 // 选择子分类
@@ -452,28 +428,27 @@ const selectSubCategory = async (categoryId: number) => {
     filterParams.value.categoryId = ''
     labels.value = []
   } else {
-    // 否则选中新的子分类
+    // 选中新的子分类并获取标签
     filterParams.value.categoryId = categoryId.toString()
     await fetchLabels(categoryId)
   }
-  handleFilterChange()
+  // 重置标签选择
+  filterParams.value.labelId = ''
+  // 重新获取题目列表
+  fetchShortAnswerProblems()  // 根据当前选中的子分类获取题目
 }
 
 // 选择标签
 const selectLabel = (labelId: number) => {
+  // 切换标签选择状态
   filterParams.value.labelId = filterParams.value.labelId === labelId.toString() 
     ? '' 
     : labelId.toString()
-  handleFilterChange()
+  // 重新获取题目列表
+  fetchShortAnswerProblems()  // 根据当前选中的标签获取题目
 }
 
-// 统一的筛选处理函数
-const handleFilterChange = () => {
-  currentPage.value = 1 // 重置页码
-  fetchShortAnswerProblems()
-}
-
-// 获取简答题
+// 获取题目列表
 const fetchShortAnswerProblems = async () => {
   try {
     const response = await fetch('http://localhost:3010/subject/getSubjectPage', {
@@ -484,16 +459,18 @@ const fetchShortAnswerProblems = async () => {
       body: JSON.stringify({
         pageNo: currentPage.value,
         pageSize: pageSize.value,
-        ...filterParams.value,
-        ...(filterParams.value.labelId ? { labelId: filterParams.value.labelId } : {}),
-        ...(filterParams.value.categoryId ? { categoryId: filterParams.value.categoryId } : {})
+        labelId: filterParams.value.labelId || undefined,
+        categoryId: filterParams.value.categoryId || undefined,
+        subjectType: filterParams.value.subjectType,  // 4-简答题 1-选择题
+        subjectDifficult: 1
       })
     })
+
     const data = await response.json()
     if (data.success) {
-      shortAnswerProblems.value = data.data.result
+      shortAnswerProblems.value = data.data.result  // 修改为 result
       totalShortAnswers.value = data.data.total
-      totalPages.value = Math.ceil(data.data.total / pageSize.value)
+      totalPages.value = data.data.totalPages  // 直接使用返回的 totalPages
     }
   } catch (error) {
     console.error('获取题目失败:', error)
@@ -519,7 +496,74 @@ const goToProblem = (id: number) => {
   router.push(`${path}/${id}`)
 }
 
-// 难度转换
+// 监听分页变化
+watch(currentPage, () => {
+  if (selectedType.value !== 'programming') {
+    fetchShortAnswerProblems()
+  }
+})
+
+// 处理题型切换
+const handleTypeChange = async (type: string) => {
+  selectedType.value = type
+  if (type !== 'programming') {
+    // 设置题目类型
+    filterParams.value.subjectType = type === 'choice' ? 1 : 4
+    // 重置筛选条件
+    filterParams.value.categoryId = ''
+    filterParams.value.labelId = ''
+    currentPage.value = 1
+    
+    console.log('Fetching categories...')
+    await fetchPrimaryCategories()
+    
+    console.log('Fetching problems...')
+    await fetchShortAnswerProblems()
+  }
+}
+
+// 确保组件挂载时调用
+onMounted(async () => {
+  console.log('Component mounted')
+  const params = route.query
+  if (params.type) {
+    await handleTypeChange(params.type.toString())
+  } else if (selectedType.value !== 'programming') {
+    await handleTypeChange(selectedType.value)
+  }
+})
+
+// 添加编程题接口定义
+interface Problem {
+  id: number
+  title: string
+  difficulty: 'easy' | 'medium' | 'hard'
+  status: 'solved' | 'attempted' | 'todo'
+  solutions: number
+  acceptanceRate: number
+}
+
+// 添加默认的编程题数据
+const problems: Problem[] = [
+  {
+    id: 3285,
+    title: '找到稳定山的标',
+    difficulty: 'easy',
+    status: 'solved',
+    solutions: 88,
+    acceptanceRate: 92.9
+  },
+  {
+    id: 1,
+    title: '两数之和',
+    difficulty: 'easy',
+    status: 'solved',
+    solutions: 26251,
+    acceptanceRate: 54.4
+  }
+]
+
+// 添加难度转换函数
 const getDifficultyText = (difficulty: string) => {
   const map = {
     easy: '简单',
@@ -528,66 +572,6 @@ const getDifficultyText = (difficulty: string) => {
   }
   return map[difficulty as keyof typeof map]
 }
-
-// 监听分页变化
-watch(currentPage, () => {
-  if (selectedType.value !== 'programming') {
-    fetchShortAnswerProblems()
-  }
-})
-
-onMounted(async () => {
-  // 从路由查询参数中获取题目类型
-  const params = route.query
-  if (params.type) {
-    selectedType.value = params.type.toString()
-  }
-  
-  if (selectedType.value !== 'programming') {
-    filterParams.value.subjectType = selectedType.value === 'choice' 
-      ? 1  // 选择题只显示 subjectType 为 1 的题目
-      : 4  // 简答题是 4
-    
-    // 尝试恢复保存的状态
-    const savedState = sessionStorage.getItem('problemListState')
-    if (savedState) {
-      try {
-        const state = JSON.parse(savedState)
-        filterParams.value.categoryId = state.categoryId || ''
-        filterParams.value.labelId = state.labelId || ''
-        currentPage.value = state.page || 1
-        
-        // 先获取主分类
-        await fetchPrimaryCategories()
-        
-        // 如果有保存的分类ID，获取对应的子分类
-        if (state.categoryId) {
-          await fetchSubCategories(parseInt(state.categoryId))
-          // 如果有保存的标签ID，获取对应的标签
-          if (state.labelId) {
-            await fetchLabels(parseInt(state.categoryId))
-          }
-        }
-      } catch (e) {
-        console.error('Error restoring state:', e)
-        // 如果恢复失败，使用默认状态
-        filterParams.value.categoryId = ''
-        filterParams.value.labelId = ''
-        currentPage.value = 1
-        await fetchPrimaryCategories()
-      }
-    } else {
-      // 如果没有保存的状态，使用默认状态
-      filterParams.value.categoryId = ''
-      filterParams.value.labelId = ''
-      currentPage.value = 1
-      await fetchPrimaryCategories()
-    }
-    
-    // 获取题目列表
-    fetchShortAnswerProblems()
-  }
-})
 </script>
 
 <style scoped>
@@ -617,7 +601,7 @@ tr {
   animation: fade-in 0.3s ease-out forwards;
 }
 
-/* 优��标签切���动画 */
+/* 优化标签切换动画 */
 .border-b-2 {
   transition: border-color 0.3s ease, color 0.3s ease;
 }

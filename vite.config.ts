@@ -9,9 +9,24 @@ const __dirname = dirname(__filename)
 export default defineConfig({
   plugins: [vue()],
   server: {
-    port: 8002,
-    strictPort: false,
-    host: true
+    port: 8003,
+    proxy: {
+      '/auth': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      },
+      '/user': {
+        target: 'http://localhost:3011',
+        changeOrigin: true,
+        secure: false
+      },
+      '/subject': {
+        target: 'http://localhost:3010',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   resolve: {
     alias: {

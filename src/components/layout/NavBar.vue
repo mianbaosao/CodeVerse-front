@@ -127,6 +127,13 @@
                 </div>
                 <div class="border-t border-gray-100 mt-2">
                   <button 
+                    @click="showEditProfile = true"
+                    class="w-full px-4 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    <i class="fas fa-user-edit mr-2"></i>
+                    修改个人信息
+                  </button>
+                  <button 
                     @click="handleLogout"
                     class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
                   >
@@ -200,6 +207,108 @@
       </div>
     </div>
   </nav>
+
+  <!-- 修改个人信息弹窗 -->
+  <div v-if="showEditProfile" 
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
+    <div class="bg-white rounded-lg w-full max-w-md p-6 relative">
+      <button 
+        @click="showEditProfile = false"
+        class="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+      >
+        <i class="fas fa-times"></i>
+      </button>
+      
+      <h3 class="text-lg font-medium text-gray-900 mb-4">修改个人信息</h3>
+      
+      <!-- 头像上传 -->
+      <div class="mb-6 flex flex-col items-center">
+        <div class="relative group">
+          <img 
+            :src="editForm.avatar || userInfo?.avatar" 
+            class="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+            alt="用户头像"
+          >
+          <div 
+            class="absolute inset-0 bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+            @click="triggerFileInput"
+          >
+            <i class="fas fa-camera text-white text-xl"></i>
+          </div>
+          <input 
+            type="file" 
+            ref="fileInput"
+            class="hidden"
+            accept="image/*"
+            @change="handleFileChange"
+          >
+        </div>
+        <span class="text-sm text-gray-500 mt-2">点击更换头像</span>
+      </div>
+
+      <!-- 个人信息表单 -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">昵称</label>
+          <input 
+            v-model="editForm.nickName"
+            type="text"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+          <input 
+            v-model="editForm.email"
+            type="email"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">手机号码</label>
+          <input 
+            v-model="editForm.phone"
+            type="tel"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">性别</label>
+          <select 
+            v-model="editForm.sex"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          >
+            <option :value="1">男</option>
+            <option :value="2">女</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">个人介绍</label>
+          <textarea 
+            v-model="editForm.introduce"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- 保存按钮 -->
+      <div class="mt-6 flex justify-end">
+        <button
+          @click="handleSave"
+          class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          :disabled="saving"
+        >
+          {{ saving ? '保存中...' : '保存修改' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -298,6 +407,135 @@ onMounted(() => {
     userInfo.value = JSON.parse(savedUserInfo)
   }
 })
+
+const showEditProfile = ref(false)
+const saving = ref(false)
+
+// 添加文件输入引用
+const fileInput = ref<HTMLInputElement | null>(null)
+
+// 添加编辑表单
+const editForm = ref({
+  nickName: '',
+  email: '',
+  phone: '',
+  sex: 1,
+  introduce: '',
+  avatar: ''
+})
+
+// 初始化编辑表单
+watch(() => userInfo.value, (newUserInfo) => {
+  if (newUserInfo) {
+    editForm.value = {
+      nickName: newUserInfo.nickName,
+      email: newUserInfo.email,
+      phone: newUserInfo.phone,
+      sex: newUserInfo.sex,
+      introduce: newUserInfo.introduce || '',
+      avatar: newUserInfo.avatar || ''
+    }
+  }
+}, { immediate: true })
+
+// 触发文件选择
+const triggerFileInput = () => {
+  fileInput.value?.click()
+}
+
+// 处理文件上传
+const handleFileChange = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (input.files && input.files[0]) {
+    const file = input.files[0]
+    const formData = new FormData()
+    
+    formData.append('uploadFile', file)
+    formData.append('bucket', 'user')
+    formData.append('objectName', 'icon')
+
+    try {
+      const tokenValue = localStorage.getItem('loginId')
+      const response = await fetch('http://localhost:4000/upload', {
+        method: 'POST',
+        headers: {
+          'satoken': 'mianbao ' + tokenValue
+        },
+        body: formData,
+        credentials: 'include'
+      })
+      
+      const data = await response.json()
+
+      if (data.success) {
+        // 立即更新头像预览
+        //console.log(data.data)
+        const avatarUrl = data.data
+        const previewImage = document.querySelector('.w-24.h-24.rounded-full') as HTMLImageElement
+        if (previewImage) {
+          previewImage.src = avatarUrl
+        }
+        // 保存到编辑表单中
+        editForm.value.avatar = avatarUrl
+      } else {
+        throw new Error(data.message || '上传失败')
+      }
+    } catch (error) {
+      console.error('上传失败:', error)
+      alert('上传失败：' + (error instanceof Error ? error.message : '请重试'))
+    }
+  }
+}
+
+// 保存修改
+const handleSave = async () => {
+  saving.value = true
+  try {
+    // 调用更新接口，包含新的头像URL
+    const response = await fetch('http://localhost:3011/user/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        userName: userInfo.value?.userName,
+        nickName: editForm.value.nickName,
+        sex: editForm.value.sex,
+        phone: editForm.value.phone,
+        email: editForm.value.email,
+        introduce: editForm.value.introduce,
+        avatar: editForm.value.avatar  // 保存时一起更新头像
+      })
+    })
+
+    const data = await response.json()
+    if (data.success) {
+      // 更新本地存储的用户信息
+      const updatedUserInfo = {
+        ...userInfo.value,
+        ...editForm.value
+      }
+      localStorage.setItem('userInfo', JSON.stringify(updatedUserInfo))
+      
+      // 触发用户信息更新
+      window.dispatchEvent(new Event('storage'))
+      
+      // 关闭弹窗
+      showEditProfile.value = false
+      showUserMenu.value = false
+      
+      // 显示成功提示
+      alert('保存成功！')
+    } else {
+      throw new Error(data.message || '保存失败')
+    }
+  } catch (error) {
+    console.error('保存失败:', error)
+    alert('保存失败：' + (error instanceof Error ? error.message : '请重试'))
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <style scoped>
