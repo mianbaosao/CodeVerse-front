@@ -141,14 +141,22 @@ const submitAnswer = () => {
 
 // 修改返回函数
 const goBack = () => {
-  router.push({
-    path: '/problems',
-    query: {
-      type: 'short-answer',
-      categoryId: sessionStorage.getItem('categoryId') || '',
-      labelId: sessionStorage.getItem('labelId') || ''
-    }
-  })
+  // 从 sessionStorage 获取之前保存的状态
+  const savedState = sessionStorage.getItem('problemListState')
+  if (savedState) {
+    const state = JSON.parse(savedState)
+    router.push({
+      path: '/problems',
+      query: {
+        type: state.type,
+        categoryId: state.categoryId,
+        labelId: state.labelId,
+        page: state.page
+      }
+    })
+  } else {
+    router.push('/problems')
+  }
 }
 
 onMounted(() => {

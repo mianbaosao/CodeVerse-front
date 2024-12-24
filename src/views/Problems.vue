@@ -6,7 +6,7 @@
         <button
           v-for="type in problemTypes"
           :key="type.value"
-          @click="selectedType = type.value"
+          @click="handleTypeChange(type.value)"
           class="group relative whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all duration-300"
           :class="[
             selectedType === type.value
@@ -31,220 +31,237 @@
       </nav>
     </div>
 
-    <!-- 添加分类和标签筛选区域 -->
-    <div v-if="selectedType !== 'programming'" class="mb-6 space-y-4">
-      <!-- 主分类 -->
-      <div class="space-y-2">
-        <h3 class="text-sm font-medium text-gray-700">主分类</h3>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="category in primaryCategories"
-            :key="category.id"
-            @click="selectPrimaryCategory(category.id)"
-            class="px-3 py-1 rounded-full text-sm transition-all duration-300"
-            :class="[
-              filterParams.categoryId === category.id.toString()
-                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
-            ]"
-          >
-            {{ category.categoryName }}
-          </button>
-        </div>
+    <!-- 未选择题型时显示提示 -->
+    <div v-if="!selectedType" class="text-center py-20">
+      <div class="text-gray-400 mb-4">
+        <i class="fas fa-hand-point-up text-4xl animate-bounce"></i>
       </div>
-
-      <!-- 子分类 -->
-      <div v-if="subCategories.length > 0" class="space-y-2">
-        <h3 class="text-sm font-medium text-gray-700">子分类</h3>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="category in subCategories"
-            :key="category.id"
-            @click="selectSubCategory(category.id)"
-            class="px-3 py-1 rounded-full text-sm transition-all duration-300"
-            :class="[
-              filterParams.categoryId === category.id.toString()
-                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
-            ]"
-          >
-            {{ category.categoryName }}
-          </button>
-        </div>
-      </div>
-
-      <!-- 标签 -->
-      <div v-if="labels.length > 0" class="space-y-2">
-        <h3 class="text-sm font-medium text-gray-700">标签</h3>
-        <div class="flex flex-wrap gap-2">
-          <button
-            v-for="label in labels"
-            :key="label.id"
-            @click="selectLabel(label.id)"
-            class="px-3 py-1 rounded-full text-sm transition-all duration-300"
-            :class="[
-              filterParams.labelId === label.id.toString()
-                ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
-            ]"
-          >
-            {{ label.labelName }}
-          </button>
-        </div>
-      </div>
+      <h3 class="text-xl font-medium text-gray-600 mb-2">
+        请选择题目类型
+      </h3>
+      <p class="text-gray-400">
+        在上方选择你想要练习的题目类型
+      </p>
     </div>
 
-    <!-- 编程题列表 -->
-    <template v-if="selectedType === 'programming'">
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">题目</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">难度</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">解答</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通过率</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="problem in problems" 
-              :key="problem.id"
-              class="hover:bg-gray-50 transition-colors cursor-pointer"
-              @click="goToProblem(problem.id)"
-            >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors">
-                  {{ problem.title }}
-                </div>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="{
-                  'px-2 py-1 text-xs rounded-full': true,
-                  'bg-green-100 text-green-800': problem.difficulty === 'easy',
-                  'bg-yellow-100 text-yellow-800': problem.difficulty === 'medium',
-                  'bg-red-100 text-red-800': problem.difficulty === 'hard'
-                }">
-                  {{ getDifficultyText(problem.difficulty) }}
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="{
-                  'flex items-center space-x-1': true,
-                  'text-green-600': problem.status === 'solved',
-                  'text-yellow-600': problem.status === 'attempted',
-                  'text-gray-400': problem.status === 'todo'
-                }">
-                  <i :class="{
-                    'fas': true,
-                    'fa-check-circle': problem.status === 'solved',
-                    'fa-clock': problem.status === 'attempted',
-                    'fa-circle': problem.status === 'todo'
-                  }"></i>
-                  <span class="text-sm">
-                    {{ problem.status === 'solved' ? '已解答' : 
-                       problem.status === 'attempted' ? '尝试过' : 
-                       '待解答' }}
-                  </span>
-                </span>
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ problem.solutions }}
-              </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {{ problem.acceptanceRate }}%
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </template>
-
-    <!-- 选择题和简答题列表 -->
+    <!-- 选择题型后显示对应的内容 -->
     <template v-else>
-      <div class="space-y-4">
-        <div v-for="problem in shortAnswerProblems" 
-          :key="problem.id"
-          class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300"
-        >
-          <div 
-            class="cursor-pointer"
-            @click.stop="goToProblem(problem.id)"
-          >
-            <div class="flex items-center justify-between mb-2">
-              <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
-                {{ problem.subjectName }}
-              </h3>
-              <div class="flex items-center space-x-4">
-                <span :class="{
-                  'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
-                  'bg-yellow-100 text-yellow-800': problem.subjectDifficult === 1,
-                  'bg-red-100 text-red-800': problem.subjectDifficult === 2
-                }">
-                  {{ problem.subjectDifficult === 1 ? '中等' : '困难' }}
-                </span>
-                <span class="text-gray-500 text-sm">
-                  {{ problem.subjectScore }} 分
-                </span>
-              </div>
+      <!-- 编程题列表 -->
+      <template v-if="selectedType === 'programming'">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">题目</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">难度</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">解答</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通过率</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-for="problem in problems" 
+                :key="problem.id"
+                class="hover:bg-gray-50 transition-colors cursor-pointer"
+                @click="goToProblem(problem.id)"
+              >
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900 hover:text-indigo-600 transition-colors">
+                    {{ problem.title }}
+                  </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span :class="{
+                    'px-2 py-1 text-xs rounded-full': true,
+                    'bg-green-100 text-green-800': problem.difficulty === 'easy',
+                    'bg-yellow-100 text-yellow-800': problem.difficulty === 'medium',
+                    'bg-red-100 text-red-800': problem.difficulty === 'hard'
+                  }">
+                    {{ getDifficultyText(problem.difficulty) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span :class="{
+                    'flex items-center space-x-1': true,
+                    'text-green-600': problem.status === 'solved',
+                    'text-yellow-600': problem.status === 'attempted',
+                    'text-gray-400': problem.status === 'todo'
+                  }">
+                    <i :class="{
+                      'fas': true,
+                      'fa-check-circle': problem.status === 'solved',
+                      'fa-clock': problem.status === 'attempted',
+                      'fa-circle': problem.status === 'todo'
+                    }"></i>
+                    <span class="text-sm">
+                      {{ problem.status === 'solved' ? '已解答' : 
+                         problem.status === 'attempted' ? '尝试过' : 
+                         '待解答' }}
+                    </span>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ problem.solutions }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {{ problem.acceptanceRate }}%
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </template>
+
+      <!-- 选择题和简答题列表 -->
+      <template v-else>
+        <!-- 添加分类和标签筛选区域 -->
+        <div class="mb-6 space-y-4">
+          <!-- 主分类 -->
+          <div class="space-y-2">
+            <h3 class="text-sm font-medium text-gray-700">主分类</h3>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="category in primaryCategories"
+                :key="category.id"
+                @click="selectPrimaryCategory(category.id)"
+                class="px-3 py-1 rounded-full text-sm transition-all duration-300"
+                :class="[
+                  String(category.id) === filterParams.categoryId
+                    ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                ]"
+              >
+                {{ category.categoryName }}
+              </button>
             </div>
-            
-            <!-- 标签列表 -->
-            <div class="flex items-center space-x-4 text-sm text-gray-500">
-              <div class="flex items-center space-x-2">
-                <i class="fas fa-tag text-gray-400"></i>
-                <div class="flex gap-1">
-                  <span v-for="(label, index) in problem.labelName" 
-                    :key="index"
-                    class="px-2 py-0.5 bg-gray-100 rounded-full text-xs"
-                  >
-                    {{ label }}
+          </div>
+
+          <!-- 子分类 -->
+          <div v-if="subCategories.length > 0" class="space-y-2">
+            <h3 class="text-sm font-medium text-gray-700">子分类</h3>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="category in subCategories"
+                :key="category.id"
+                @click="selectSubCategory(category.id)"
+                class="px-3 py-1 rounded-full text-sm transition-all duration-300"
+                :class="[
+                  String(category.id) === filterParams.categoryId
+                    ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                ]"
+              >
+                {{ category.categoryName }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 标签 -->
+          <div v-if="labels.length > 0" class="space-y-2">
+            <h3 class="text-sm font-medium text-gray-700">标签</h3>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="label in labels"
+                :key="label.id"
+                @click="selectLabel(label.id)"
+                class="px-3 py-1 rounded-full text-sm transition-all duration-300"
+                :class="[
+                  String(label.id) === filterParams.labelId
+                    ? 'bg-indigo-100 text-indigo-700 border-2 border-indigo-300'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border-2 border-transparent'
+                ]"
+              >
+                {{ label.labelName }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 题目列表 -->
+        <div class="space-y-4">
+          <div v-for="problem in shortAnswerProblems" 
+            :key="problem.id"
+            class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-300"
+          >
+            <div 
+              class="cursor-pointer"
+              @click.stop="goToProblem(problem.id)"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
+                  {{ problem.subjectName }}
+                </h3>
+                <div class="flex items-center space-x-4">
+                  <span :class="{
+                    'px-2 py-1 text-xs rounded-full transition-all duration-300': true,
+                    'bg-yellow-100 text-yellow-800': problem.subjectDifficult === 1,
+                    'bg-red-100 text-red-800': problem.subjectDifficult === 2
+                  }">
+                    {{ problem.subjectDifficult === 1 ? '中等' : '困难' }}
+                  </span>
+                  <span class="text-gray-500 text-sm">
+                    {{ problem.subjectScore }} 分
                   </span>
                 </div>
               </div>
-              <!-- 题目类型 -->
-              <div class="flex items-center space-x-2">
-                <i :class="[
-                  problem.subjectType === 4 ? 'fas fa-pen' : 'fas fa-check-circle',
-                  'text-gray-400'
-                ]"></i>
-                <span>{{ problem.subjectType === 4 ? '简答题' : '选择题' }}</span>
+              
+              <!-- 标签列表 -->
+              <div class="flex items-center space-x-4 text-sm text-gray-500">
+                <div class="flex items-center space-x-2">
+                  <i class="fas fa-tag text-gray-400"></i>
+                  <div class="flex gap-1">
+                    <span v-for="(label, index) in problem.labelName" 
+                      :key="index"
+                      class="px-2 py-0.5 bg-gray-100 rounded-full text-xs"
+                    >
+                      {{ label }}
+                    </span>
+                  </div>
+                </div>
+                <!-- 题目类型 -->
+                <div class="flex items-center space-x-2">
+                  <i :class="[
+                    problem.subjectType === 4 ? 'fas fa-pen' : 'fas fa-check-circle',
+                    'text-gray-400'
+                  ]"></i>
+                  <span>{{ problem.subjectType === 4 ? '简答题' : '选择题' }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 分页器 -->
-      <div class="mt-6 flex justify-center space-x-2">
-        <button 
-          @click="currentPage--"
-          :disabled="currentPage === 1"
-          class="px-3 py-1 rounded border transition-all duration-300"
-          :class="[
-            currentPage === 1 
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-              : 'hover:bg-indigo-50 text-indigo-600'
-          ]"
-        >
-          上一页
-        </button>
-        <span class="px-3 py-1 text-gray-600">
-          第 {{ currentPage }} / {{ totalPages }} 页
-        </span>
-        <button 
-          @click="currentPage++"
-          :disabled="currentPage === totalPages"
-          class="px-3 py-1 rounded border transition-all duration-300"
-          :class="[
-            currentPage === totalPages 
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-              : 'hover:bg-indigo-50 text-indigo-600'
-          ]"
-        >
-          下一页
-        </button>
-      </div>
+        <!-- 分页器 -->
+        <div class="mt-6 flex justify-center space-x-2">
+          <button 
+            @click="currentPage--"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 rounded border transition-all duration-300"
+            :class="[
+              currentPage === 1 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'hover:bg-indigo-50 text-indigo-600'
+            ]"
+          >
+            上一页
+          </button>
+          <span class="px-3 py-1 text-gray-600">
+            第 {{ currentPage }} / {{ totalPages }} 页
+          </span>
+          <button 
+            @click="currentPage++"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 rounded border transition-all duration-300"
+            :class="[
+              currentPage === totalPages 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'hover:bg-indigo-50 text-indigo-600'
+            ]"
+          >
+            下一页
+          </button>
+        </div>
+      </template>
     </template>
   </div>
 </template>
@@ -273,7 +290,7 @@ const problemTypes = [
   { label: '简答题', value: 'short-answer', icon: 'fas fa-pen', count: 500 }
 ]
 
-const selectedType: Ref<string> = ref('programming')
+const selectedType: Ref<string> = ref('')
 
 // 分页相关的状态
 const currentPage = ref(1)
@@ -338,7 +355,7 @@ const fetchSubCategories = async (parentId: number) => {
     const data = await response.json()
     if (data.success) {
       subCategories.value = data.data
-      labels.value = []
+      labels.value = []  // 清空标签列表
     }
   } catch (error) {
     console.error('获取子分类失败:', error)
@@ -366,62 +383,26 @@ const fetchLabels = async (categoryId: number) => {
   }
 }
 
-// 修改状态定义
-const shortAnswerProblems: Ref<ShortAnswerProblem[]> = ref([])
-const totalShortAnswers: Ref<number> = ref(0)
-
-// 定义过滤参数接口
-interface FilterParams {
-  subjectType: number
-  categoryId: string
-  labelId: string
-}
-
-// 初始化过滤参数
-const filterParams = ref<FilterParams>({
-  subjectType: 4,  // 默认为简答题类型
-  categoryId: '',
-  labelId: ''
-})
-
-// 监听题目类型变化
-watch(() => selectedType.value, async (newType) => {
-  if (newType !== 'programming') {
-    // 设置题目类型
-    filterParams.value.subjectType = newType === 'choice' ? 1 : 4  // 选择题是1，简答题是4
-    // 重置筛选条件
-    filterParams.value.categoryId = ''
-    filterParams.value.labelId = ''
-    currentPage.value = 1
-    // 获取主分类
-    await fetchPrimaryCategories()
-    // 清空子分类和标签
-    subCategories.value = []
-    labels.value = []
-    // 获取题目列表
-    fetchShortAnswerProblems()
-  }
-})
-
-// 选择主分类
+// 修改选择主分类的函数
 const selectPrimaryCategory = async (categoryId: number) => {
-  // 如果点击的是���前选中的分类，则取消选中
+  // 如果点击的是当前选中的分类，则取消选中
   if (filterParams.value.categoryId === categoryId.toString()) {
     filterParams.value.categoryId = ''
     subCategories.value = []
     labels.value = []
   } else {
-    // 选中新的分类并获取子分类
+    // 选中新的分类并获取子分类和标签
     filterParams.value.categoryId = categoryId.toString()
     await fetchSubCategories(categoryId)
+    await fetchLabels(categoryId)  // 获取标签
   }
   // 重置标签选择
   filterParams.value.labelId = ''
   // 重新获取题目列表
-  fetchShortAnswerProblems()  // 根据当前选中的分类获取题目
+  fetchShortAnswerProblems()
 }
 
-// 选择子分类
+// 修改选择子分类的函数
 const selectSubCategory = async (categoryId: number) => {
   // 如果点击的是当前选中的子分类，则取消选中
   if (filterParams.value.categoryId === categoryId.toString()) {
@@ -430,12 +411,12 @@ const selectSubCategory = async (categoryId: number) => {
   } else {
     // 选中新的子分类并获取标签
     filterParams.value.categoryId = categoryId.toString()
-    await fetchLabels(categoryId)
+    await fetchLabels(categoryId)  // 获取标签
   }
   // 重置标签选择
   filterParams.value.labelId = ''
   // 重新获取题目列表
-  fetchShortAnswerProblems()  // 根据当前选中的子分类获取题目
+  fetchShortAnswerProblems()
 }
 
 // 选择标签
@@ -503,21 +484,44 @@ watch(currentPage, () => {
   }
 })
 
-// 处理题型切换
+// 修改处理题型切换的函数
 const handleTypeChange = async (type: string) => {
   selectedType.value = type
   if (type !== 'programming') {
     // 设置题目类型
     filterParams.value.subjectType = type === 'choice' ? 1 : 4
-    // 重置筛选条件
+    
+    // 获取保存的状态
+    const savedState = sessionStorage.getItem('problemListState')
+    if (savedState) {
+      const state = JSON.parse(savedState)
+      
+      // 如果类型匹配，恢复保存的筛选条件
+      if (state.type === type) {
+        filterParams.value.categoryId = state.categoryId || ''
+        filterParams.value.labelId = state.labelId || ''
+        currentPage.value = state.page || 1
+        
+        // 先获取分类
+        await fetchPrimaryCategories()
+        
+        // 如果有分类ID，获取子分类
+        if (state.categoryId) {
+          await fetchSubCategories(parseInt(state.categoryId))
+        }
+        
+        // 获取题目列表
+        await fetchShortAnswerProblems()
+        return
+      }
+    }
+    
+    // 如果没有保存的状态或类型不匹配，重置筛选条件
     filterParams.value.categoryId = ''
     filterParams.value.labelId = ''
     currentPage.value = 1
     
-    console.log('Fetching categories...')
     await fetchPrimaryCategories()
-    
-    console.log('Fetching problems...')
     await fetchShortAnswerProblems()
   }
 }
@@ -525,11 +529,49 @@ const handleTypeChange = async (type: string) => {
 // 确保组件挂载时调用
 onMounted(async () => {
   console.log('Component mounted')
-  const params = route.query
-  if (params.type) {
-    await handleTypeChange(params.type.toString())
-  } else if (selectedType.value !== 'programming') {
-    await handleTypeChange(selectedType.value)
+  
+  // 先检查 URL 参数
+  const query = route.query
+  if (query.type) {
+    await handleTypeChange(query.type.toString())
+    
+    // 如果有分类和标签参数，复它们
+    if (query.categoryId) {
+      filterParams.value.categoryId = query.categoryId.toString()
+      await fetchSubCategories(parseInt(query.categoryId.toString()))
+    }
+    
+    if (query.labelId) {
+      filterParams.value.labelId = query.labelId.toString()
+    }
+    
+    if (query.page) {
+      currentPage.value = parseInt(query.page.toString())
+    }
+    
+    // 获取题目列表
+    await fetchShortAnswerProblems()
+  }
+  // 如果没有 URL 参数，再尝试从 sessionStorage 恢复
+  else {
+    const savedState = sessionStorage.getItem('problemListState')
+    if (savedState) {
+      const state = JSON.parse(savedState)
+      await handleTypeChange(state.type)
+      currentPage.value = state.page || 1
+      
+      if (state.categoryId) {
+        filterParams.value.categoryId = state.categoryId
+        await fetchSubCategories(parseInt(state.categoryId))
+      }
+      
+      if (state.labelId) {
+        filterParams.value.labelId = state.labelId
+      }
+      
+      // 清除保存的状态
+      sessionStorage.removeItem('problemListState')
+    }
   }
 })
 
@@ -572,6 +614,43 @@ const getDifficultyText = (difficulty: string) => {
   }
   return map[difficulty as keyof typeof map]
 }
+
+// 修改状态定义
+const shortAnswerProblems: Ref<ShortAnswerProblem[]> = ref([])
+const totalShortAnswers: Ref<number> = ref(0)
+
+// 定义过滤参数接口
+interface FilterParams {
+  subjectType: number
+  categoryId: string
+  labelId: string
+}
+
+// 初始化过滤参数
+const filterParams = ref<FilterParams>({
+  subjectType: 4,  // 默认为简答题类型
+  categoryId: '',
+  labelId: ''
+})
+
+// 监听题目类型变化
+watch(() => selectedType.value, async (newType) => {
+  if (newType !== 'programming') {
+    // 设置题目类型
+    filterParams.value.subjectType = newType === 'choice' ? 1 : 4  // 选择题是1，简答题是4
+    // 重置筛选条件
+    filterParams.value.categoryId = ''
+    filterParams.value.labelId = ''
+    currentPage.value = 1
+    // 获取主分类
+    await fetchPrimaryCategories()
+    // 清空子分类和标签
+    subCategories.value = []
+    labels.value = []
+    // 获取题目列表
+    fetchShortAnswerProblems()
+  }
+})
 </script>
 
 <style scoped>
