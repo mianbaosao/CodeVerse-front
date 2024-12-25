@@ -8,6 +8,8 @@ import ChoiceProblemDetail from '@/views/ChoiceProblemDetail.vue'
 import Learn from '@/views/Learn.vue'
 import Leaderboard from '@/views/Leaderboard.vue'
 import Login from '@/views/Login.vue'
+import Interview from '@/views/Interview.vue'
+import Community from '@/views/Community.vue'
 
 // 定义用户信息接口
 interface UserInfo {
@@ -87,6 +89,16 @@ const router = createRouter({
       path: '/login',
       name: 'Login',
       component: Login
+    },
+    {
+      path: '/interview',
+      name: 'Interview',
+      component: Interview
+    },
+    {
+      path: '/community',
+      name: 'Community',
+      component: Community
     }
   ]
 }) as Router
