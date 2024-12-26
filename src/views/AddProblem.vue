@@ -235,7 +235,7 @@ const labels = ref([])
 // 获取主分类
 const fetchPrimaryCategories = async () => {
   try {
-    const response = await fetch('http://localhost:3010/subject/category/queryPrimaryCategory', {
+    const response = await fetch('/subject/category/queryPrimaryCategory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ categoryType: 1 })
@@ -252,7 +252,7 @@ const fetchPrimaryCategories = async () => {
 // 获取子分类
 const fetchSubCategories = async (parentId: number) => {
   try {
-    const response = await fetch('http://localhost:3010/subject/category/queryCategoryByPrimary', {
+    const response = await fetch('/subject/category/queryCategoryByPrimary', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -272,7 +272,7 @@ const fetchSubCategories = async (parentId: number) => {
 // 获取标签
 const fetchLabels = async (categoryId: number) => {
   try {
-    const response = await fetch('http://localhost:3010/subject/label/queryByCategoryId', {
+    const response = await fetch('/subject/label/queryByCategoryId', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ categoryId })
@@ -346,7 +346,7 @@ const submitProblem = async () => {
     const authInfo = localStorage.getItem('userAuthInfo')
     const { tokenValue = '' } = authInfo ? JSON.parse(authInfo) : {}
 
-    const response = await fetch('http://localhost:3010/subject/add', {
+    const response = await fetch('/subject/subject/add', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

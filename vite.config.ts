@@ -21,7 +21,17 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       },
-      '/subject': {
+      '/subject/subject': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false
+      },
+      '/subject/category': {
+        target: 'http://localhost:3010',
+        changeOrigin: true,
+        secure: false
+      },
+      '/subject/label': {
         target: 'http://localhost:3010',
         changeOrigin: true,
         secure: false

@@ -389,6 +389,7 @@ const fetchLabels = async (categoryId: number) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
+
       },
       body: JSON.stringify({
         categoryId: categoryId
