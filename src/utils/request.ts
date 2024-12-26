@@ -2,33 +2,54 @@ interface RequestOptions extends RequestInit {
   needAuth?: boolean
 }
 
+interface UserAuthInfo {
+  isLogin: boolean
+  loginId: string
+  tokenValue: string
+  [key: string]: any
+}
+
+// 定义请求头接口
+interface BaseHeaders {
+  'Content-Type': string
+  'loginId'?: string
+  'Satoken'?: string
+  [key: string]: string | undefined
+}
+
+// 获取用户认证信息
+const getUserAuthInfo = (): UserAuthInfo | null => {
+  const authInfo = localStorage.getItem('userAuthInfo')
+  return authInfo ? JSON.parse(authInfo) : null
+}
+
 const request = {
   async get<T>(url: string, options: RequestOptions = {}): Promise<T> {
     const { needAuth = true, ...restOptions } = options
     
-    // 添加标准请求头
-    const headers = new Headers({
-      'Accept': 'application/json, text/plain, */*',
-      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-      'Content-Type': 'application/json; charset=UTF-8',
-      'User-Agent': navigator.userAgent,
+    // 从 userAuthInfo 获取 loginId
+    const authInfo = getUserAuthInfo()
+    const loginId = authInfo?.loginId
+    
+    // 创建基础请求头
+    const baseHeaders: BaseHeaders = {
+      'Content-Type': 'application/json',
+      ...(loginId && { 'loginId': loginId }), // 如果有 loginId 就添加到请求头
       ...restOptions.headers
-    })
+    }
 
     // 如果需要认证，添加认证信息
-    if (needAuth) {
-      const loginId = localStorage.getItem('loginId')
-      const tokenValue = localStorage.getItem('tokenValue')
+    if (needAuth && authInfo) {
+      const { tokenValue } = authInfo
       if (loginId && tokenValue) {
-        headers.append('LoginId', loginId)
-        headers.append('Satoken', 'mianbao ' + tokenValue)
+        baseHeaders['Satoken'] = 'mianbao ' + tokenValue
       }
     }
 
     const response = await fetch(url, {
       ...restOptions,
       method: 'GET',
-      headers,
+      headers: baseHeaders,
       credentials: 'include',
       mode: 'cors'
     })
@@ -38,27 +59,24 @@ const request = {
   async post<T>(url: string, data: any, options: RequestOptions = {}): Promise<T> {
     const { needAuth = true, ...restOptions } = options
     
-    // 添加标准请求头
-    const headers = new Headers({
-      'Accept': 'application/json, text/plain, */*',
-      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-      'Content-Type': 'application/json; charset=UTF-8',
-      'User-Agent': navigator.userAgent,
+    // 从 userAuthInfo 获取 loginId
+    const authInfo = getUserAuthInfo()
+    const loginId = authInfo?.loginId
+    
+    // 创建基础请求头
+    const baseHeaders: BaseHeaders = {
+      'Content-Type': 'application/json',
+      ...(loginId && { 'loginId': loginId }), // 如果有 loginId 就添加到请求头
       ...restOptions.headers
-    })
+    }
 
     // 如果需要认证，添加认证信息
-    if (needAuth) {
-      const loginId = localStorage.getItem('loginId')
-      const tokenValue = localStorage.getItem('tokenValue')
+    if (needAuth && authInfo) {
+      const { tokenValue } = authInfo
       if (loginId && tokenValue) {
-        headers.append('LoginId', loginId)
-        headers.append('Satoken', 'mianbao ' + tokenValue)
+        baseHeaders['Satoken'] = 'mianbao ' + tokenValue
         // 调试信息
-        console.log('Request Headers:', {
-          LoginId: loginId,
-          Satoken: 'mianbao ' + tokenValue
-        })
+        console.log('Request Headers:', baseHeaders)
       } else {
         console.warn('Missing auth info:', { loginId, tokenValue })
       }
@@ -67,7 +85,7 @@ const request = {
     const response = await fetch(url, {
       ...restOptions,
       method: 'POST',
-      headers,
+      headers: baseHeaders,
       body: JSON.stringify(data),
       credentials: 'include',
       mode: 'cors'

@@ -10,42 +10,7 @@ import Leaderboard from '@/views/Leaderboard.vue'
 import Login from '@/views/Login.vue'
 import Interview from '@/views/Interview.vue'
 import Community from '@/views/Community.vue'
-
-// 定义用户信息接口
-interface UserInfo {
-  id: number
-  userName: string
-  nickName: string
-  email: string
-  phone: string
-  sex: number
-  avatar: string
-  status: number
-  introduce: string
-}
-
-// 创建获取用户信息的函数
-async function fetchUserInfo(loginId: string) {
-  try {
-    const response = await fetch('http://localhost:3011/user/getUserInfo', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        userName: loginId
-      })
-    })
-    const data = await response.json()
-    if (data.success) {
-      localStorage.setItem('userInfo', JSON.stringify(data.data))
-      return true
-    }
-  } catch (error) {
-    console.error('获取用户信息失败:', error)
-  }
-  return false
-}
+import AddProblem from '@/views/AddProblem.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -99,35 +64,39 @@ const router = createRouter({
       path: '/community',
       name: 'Community',
       component: Community
+    },
+    {
+      path: '/add-problem',
+      name: 'AddProblem',
+      component: AddProblem
     }
   ]
 }) as Router
 
-// 修改路由守卫
+// 路由守卫
 router.beforeEach(async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext
 ) => {
-  // 检查是否有 loginId
-  const loginId = localStorage.getItem('loginId')
-  
-  // 如果有 loginId，尝试获取用户信息
-  if (loginId) {
-    await fetchUserInfo(loginId)
-  }
-
-  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+  // 检查是否需要认证
   const requiresAuth = ['/problem', '/choice', '/short-answer'].some(path => 
     to.path.startsWith(path)
   )
   
-  if (requiresAuth && !isLoggedIn) {
-    sessionStorage.setItem('loginRedirect', to.path)
-    next('/login')
-  } else {
-    next()
+  if (requiresAuth) {
+    // 从 userAuthInfo 获取登录状态
+    const authInfo = localStorage.getItem('userAuthInfo')
+    const { isLogin = false } = authInfo ? JSON.parse(authInfo) : {}
+    
+    if (!isLogin) {
+      sessionStorage.setItem('loginRedirect', to.path)
+      next('/login')
+      return
+    }
   }
+  
+  next()
 })
 
 export default router 

@@ -50,8 +50,8 @@ interface ApiResponse<T = any> {
 }
 
 interface LoginResponse {
-  loginId: string
-  tokenValue: string
+  LoginId: string
+  Satoken: string
 }
 
 interface UserInfo {
@@ -85,19 +85,22 @@ const handleLogin = async () => {
     
     if (response.success) {
       // 保存登录状态、loginId 和 tokenValue
-      const { loginId, tokenValue } = response.data
-      localStorage.setItem('isLoggedIn', 'true')
-      localStorage.setItem('loginId', loginId)
-      localStorage.setItem('tokenValue', tokenValue)
-      
+      localStorage.setItem('userAuthInfo', JSON.stringify(response.data))
       // 获取用户信息时需要认证头
+      const userInfoStorage = localStorage.getItem('userAuthInfo')
+      const { loginId = '', tokenValue = '' } = userInfoStorage ? JSON.parse(userInfoStorage) : {}
+
+      const headers = {
+        'satoken': tokenValue
+      };
       const userResponse = await request.post<ApiResponse<UserInfo>>(
         '/user/getUserInfo',
-        { userName: loginId }
+        { userName: loginId },
+          { headers }
       )
       
       if (userResponse.success) {
-        localStorage.setItem('userInfo', JSON.stringify(userResponse.data))
+         localStorage.setItem('userInfo', JSON.stringify(userResponse.data))
         window.dispatchEvent(new Event('storage'))
         const redirect = sessionStorage.getItem('loginRedirect') || '/'
         sessionStorage.removeItem('loginRedirect')

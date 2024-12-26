@@ -2,31 +2,51 @@
   <div class="container mx-auto px-4 py-6">
     <!-- 题型选择标签栏 -->
     <div class="mb-6 border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8">
+      <nav class="-mb-px flex justify-between items-center">
+        <!-- 题型选择 -->
+        <div class="flex space-x-8">
+          <button
+            v-for="type in problemTypes"
+            :key="type.value"
+            @click="handleTypeChange(type.value)"
+            class="group relative whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all duration-300"
+            :class="[
+              selectedType === type.value
+                ? 'border-indigo-500 text-indigo-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            ]"
+          >
+            <div class="flex items-center space-x-2">
+              <i :class="[
+                type.icon,
+                'transition-transform duration-300 group-hover:scale-110',
+                selectedType === type.value ? 'animate-bounce-small' : ''
+              ]"></i>
+              <span>{{ type.label }}</span>
+              <span class="ml-2 text-gray-400 group-hover:text-gray-500 transition-colors">
+                ({{ type.count }})
+              </span>
+            </div>
+            <!-- 悬浮光效 -->
+            <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50 group-hover:to-purple-50 transition-colors duration-300 rounded-lg -z-10"></div>
+          </button>
+        </div>
+        
+        <!-- 出题按钮 -->
         <button
-          v-for="type in problemTypes"
-          :key="type.value"
-          @click="handleTypeChange(type.value)"
-          class="group relative whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition-all duration-300"
+          @click="handleAddProblem"
+          class="px-4 py-2 rounded-lg transition-all duration-300"
           :class="[
-            selectedType === type.value
-              ? 'border-indigo-500 text-indigo-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            hasAddPermission 
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
           ]"
+          :title="hasAddPermission ? '点击出题' : '无出题权限'"
         >
           <div class="flex items-center space-x-2">
-            <i :class="[
-              type.icon,
-              'transition-transform duration-300 group-hover:scale-110',
-              selectedType === type.value ? 'animate-bounce-small' : ''
-            ]"></i>
-            <span>{{ type.label }}</span>
-            <span class="ml-2 text-gray-400 group-hover:text-gray-500 transition-colors">
-              ({{ type.count }})
-            </span>
+            <i class="fas fa-plus"></i>
+            <span>出题</span>
           </div>
-          <!-- 悬浮光效 -->
-          <div class="absolute inset-0 bg-gradient-to-r from-indigo-50/0 to-purple-50/0 group-hover:from-indigo-50 group-hover:to-purple-50 transition-colors duration-300 rounded-lg -z-10"></div>
         </button>
       </nav>
     </div>
@@ -426,32 +446,38 @@ const selectLabel = (labelId: number) => {
     ? '' 
     : labelId.toString()
   // 重新获取题目列表
-  fetchShortAnswerProblems()  // 根据当前选中的标签获取题目
+  fetchShortAnswerProblems()
 }
 
 // 获取题目列表
 const fetchShortAnswerProblems = async () => {
   try {
+    // 从 userAuthInfo 获取认证信息
+    const authInfo = localStorage.getItem('userAuthInfo')
+    const { loginId, tokenValue } = authInfo ? JSON.parse(authInfo) : {}
+
     const response = await fetch('http://localhost:3010/subject/getSubjectPage', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(loginId && { 'loginId': loginId }),
+        ...(tokenValue && { 'Satoken': 'mianbao ' + tokenValue })
       },
       body: JSON.stringify({
         pageNo: currentPage.value,
         pageSize: pageSize.value,
         labelId: filterParams.value.labelId || undefined,
         categoryId: filterParams.value.categoryId || undefined,
-        subjectType: filterParams.value.subjectType,  // 4-简答题 1-选择题
+        subjectType: filterParams.value.subjectType,
         subjectDifficult: 1
       })
     })
 
     const data = await response.json()
     if (data.success) {
-      shortAnswerProblems.value = data.data.result  // 修改为 result
+      shortAnswerProblems.value = data.data.result
       totalShortAnswers.value = data.data.total
-      totalPages.value = data.data.totalPages  // 直接使用返回的 totalPages
+      totalPages.value = data.data.totalPages
     }
   } catch (error) {
     console.error('获取题目失败:', error)
@@ -650,6 +676,50 @@ watch(() => selectedType.value, async (newType) => {
     // 获取题目列表
     fetchShortAnswerProblems()
   }
+})
+
+// 添加权限状态
+const hasAddPermission = ref(false)
+
+// 添加检查权限的函数
+const checkPermission = async () => {
+  try {
+    const authInfo = localStorage.getItem('userAuthInfo')
+    const { loginId } = authInfo ? JSON.parse(authInfo) : {}
+    
+    if (!loginId) {
+      return false
+    }
+
+    const response = await fetch(`http://localhost:3011/permission/getPermission?userName=${loginId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const data = await response.json()
+    if (data.success) {
+      return data.data.includes('subject:add')
+    }
+  } catch (error) {
+    console.error('检查权限失败:', error)
+  }
+  return false
+}
+
+// 处理出题按钮点击
+const handleAddProblem = () => {
+  if (hasAddPermission.value) {
+    router.push('/add-problem')
+  } else {
+    alert('您没有出题权限')
+  }
+}
+
+// 在组件挂载时检查权限
+onMounted(async () => {
+  hasAddPermission.value = await checkPermission()
 })
 </script>
 

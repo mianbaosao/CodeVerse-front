@@ -222,7 +222,7 @@
       
       <h3 class="text-lg font-medium text-gray-900 mb-4">修改个人信息</h3>
       
-      <!-- ��像上传 -->
+      <!-- 头像上传 -->
       <div class="mb-6 flex flex-col items-center">
         <div class="relative group">
           <img 
@@ -370,12 +370,16 @@ const toggleUserMenu = () => {
 }
 
 const handleLogout = () => {
-  localStorage.removeItem('isLoggedIn')
-  localStorage.removeItem('loginId')
+  // 清除所有认证相关的本地存储
+  localStorage.removeItem('userAuthInfo')
   localStorage.removeItem('userInfo')
+  
+  // 重置状态
   isLoggedIn.value = false
   userInfo.value = null
   showUserMenu.value = false
+  
+  // 跳转到首页
   router.push('/')
 }
 
@@ -393,7 +397,7 @@ watch(() => localStorage.getItem('userInfo'), (newValue) => {
 // 添加 router 实例
 const router = useRouter()
 
-// 修改事件监听器的类型
+// 修改登录状态检查
 onMounted(() => {
   document.addEventListener('click', (e: MouseEvent) => {
     const target = e.target as HTMLElement
@@ -402,8 +406,13 @@ onMounted(() => {
     }
   })
   
-  // 检查登录状态
-  isLoggedIn.value = localStorage.getItem('isLoggedIn') === 'true'
+  // 从 userAuthInfo 获取登录状态
+  const authInfo = localStorage.getItem('userAuthInfo')
+  if (authInfo) {
+    const { isLogin } = JSON.parse(authInfo)
+    isLoggedIn.value = isLogin
+  }
+  
   const savedUserInfo = localStorage.getItem('userInfo')
   if (savedUserInfo) {
     userInfo.value = JSON.parse(savedUserInfo)
@@ -457,7 +466,10 @@ const handleFileChange = async (event: Event) => {
     formData.append('objectName', 'icon')
 
     try {
-      const tokenValue = localStorage.getItem('loginId')
+      // 从 userAuthInfo 获取 tokenValue
+      const authInfo = localStorage.getItem('userAuthInfo')
+      const { tokenValue = '' } = authInfo ? JSON.parse(authInfo) : {}
+
       const response = await fetch('http://localhost:4000/upload', {
         method: 'POST',
         headers: {
@@ -493,7 +505,7 @@ const handleFileChange = async (event: Event) => {
 const handleSave = async () => {
   saving.value = true
   try {
-    // 调用更新接口，包含��的头像URL
+    // 调用更新接口，包含头像的URL
     const response = await fetch('http://localhost:3011/user/update', {
       method: 'POST',
       headers: {
