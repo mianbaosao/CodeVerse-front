@@ -222,7 +222,7 @@
       
       <h3 class="text-lg font-medium text-gray-900 mb-4">修改个人信息</h3>
       
-      <!-- 头像上传 -->
+      <!-- ��像上传 -->
       <div class="mb-6 flex flex-col items-center">
         <div class="relative group">
           <img 
@@ -328,7 +328,7 @@ const menuItems: MenuItem[] = [
   { name: '首页', path: '/', icon: 'fas fa-home' },
   { name: '题库', path: '/problems', icon: 'fas fa-code' },
   { name: '学习', path: '/learn', icon: 'fas fa-book' },
-  { name: '模拟面试', path: '/interview', icon: 'fas fa-comments' },
+  { name: '套卷练习', path: '/practice', icon: 'fas fa-file-alt' },
   { name: '社区', path: '/community', icon: 'fas fa-users' },
   { name: '排行榜', path: '/leaderboard', icon: 'fas fa-trophy' },
 ]

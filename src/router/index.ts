@@ -8,9 +8,10 @@ import ChoiceProblemDetail from '@/views/ChoiceProblemDetail.vue'
 import Learn from '@/views/Learn.vue'
 import Leaderboard from '@/views/Leaderboard.vue'
 import Login from '@/views/Login.vue'
-import Interview from '@/views/Interview.vue'
 import Community from '@/views/Community.vue'
 import AddProblem from '@/views/AddProblem.vue'
+import Practice from '@/views/Practice.vue'
+import PracticeDetail from '@/views/PracticeDetail.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -56,11 +57,6 @@ const router = createRouter({
       component: Login
     },
     {
-      path: '/interview',
-      name: 'Interview',
-      component: Interview
-    },
-    {
       path: '/community',
       name: 'Community',
       component: Community
@@ -69,6 +65,21 @@ const router = createRouter({
       path: '/add-problem',
       name: 'AddProblem',
       component: AddProblem
+    },
+    {
+      path: '/practice',
+      name: 'Practice',
+      component: Practice
+    },
+    {
+      path: '/practice/:id',
+      name: 'PracticeDetail',
+      component: PracticeDetail
+    },
+    {
+      path: '/practice/:id/summary',
+      name: 'PracticeSummary',
+      component: () => import('@/views/PracticeSummary.vue')
     }
   ]
 }) as Router
