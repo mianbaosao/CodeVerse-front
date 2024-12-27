@@ -162,6 +162,42 @@
       </div>
     </div>
   </div>
+
+  <!-- 添加确认弹窗 -->
+  <div v-if="showSubmitConfirm" 
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+  >
+    <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 relative animate-fade-in">
+      <!-- 弹窗标题 -->
+      <div class="text-center mb-6">
+
+        <h3 class="text-xl font-bold text-gray-900">提交前确认</h3>
+      </div>
+
+      <!-- 提示内容 -->
+      <div class="text-center mb-8">
+        <p class="text-gray-600">
+          你还有部分题目未完成，交卷即可查看试卷全部答案及解析，是否立即交卷？
+        </p>
+      </div>
+
+      <!-- 按钮组 -->
+      <div class="flex justify-center space-x-4">
+        <button 
+          @click="showSubmitConfirm = false"
+          class="px-6 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          继续做题
+        </button>
+        <button 
+          @click="confirmSubmit"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          立即交卷
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -350,7 +386,7 @@ const nextQuestion = async () => {
       
     } catch (error) {
       console.error('提交答案失败:', error)
-      alert('提交答案失败，请重试')
+      alert('提交答案失��，请重试')
     } finally {
       loading.value = false
     }
@@ -371,28 +407,21 @@ const formatSubmitTime = () => {
 }
 
 // 修改提交练习的函数
-const submitPractice = async () => {
+const submitPractice = () => {
   if (!subjects.value?.length) {
     alert('题目加载失败，请刷新页面重试')
     return
   }
 
-  if (answers.value.length !== subjects.value.length) {
-    alert('还有题目未完成，请检查答题卡')
-    return
-  }
+  // 显示确认弹窗
+  showSubmitConfirm.value = true
+}
 
-  if (!confirm('确认提交答卷吗？提交后将无法修改。')) {
-    return
-  }
-
+// 添加确认提交的函数
+const confirmSubmit = async () => {
   try {
     loading.value = true
     
-    // 先提交最后一题
-    await submitSingleQuestion()
-    
-    // 然后提交整个练习
     const response = await fetch('http://localhost:3013/practice/detail/submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -400,12 +429,7 @@ const submitPractice = async () => {
         setId: Number(route.params.id),
         practiceId: practiceId.value,
         timeUse: formatTimeForSubmit(timer.value),
-        submitTime: formatSubmitTime(),
-        answerList: answers.value.map(answer => ({
-          subjectId: answer.subjectId,
-          subjectType: answer.subjectType,
-          answerContents: [answer.answer] // 将答案包装成数组
-        }))
+        submitTime: formatSubmitTime()
       })
     })
 
@@ -426,6 +450,7 @@ const submitPractice = async () => {
     alert('提交失败：' + (error instanceof Error ? error.message : '请重试'))
   } finally {
     loading.value = false
+    showSubmitConfirm.value = false
   }
 }
 
@@ -505,6 +530,9 @@ const startAutoSave = () => {
 // 添加 isSubmitted 变量
 const isSubmitted = ref(false)
 
+// 添加新的响应式变量
+const showSubmitConfirm = ref(false)
+
 onMounted(() => {
   fetchPracticeSubjects()
   startTimer()
@@ -558,5 +586,25 @@ label:hover::after {
 /* 添加按钮点击效果 */
 button:active {
   transform: scale(0.98);
+}
+
+/* 添加弹窗动画 */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* 添加背景模糊效果 */
+.bg-black.bg-opacity-50 {
+  backdrop-filter: blur(4px);
+}
+
+/* 添加弹窗阴影效果 */
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
 }
 </style> 
