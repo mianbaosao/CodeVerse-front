@@ -103,66 +103,45 @@
         <div class="col-span-12 lg:col-span-6 space-y-4">
           <div class="bg-white rounded-lg shadow-xl border border-gray-200">
             <!-- 语言选择器 -->
-            <div class="editor-container relative">
-              <!-- 工具栏 -->
-              <div class="border-b border-gray-200 p-4 bg-gray-50 flex justify-between items-center">
-                <select 
-                  v-model="selectedLanguage" 
-                  class="bg-white text-gray-800 border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+            <div class="border-b border-gray-200 p-4 bg-gray-50 flex justify-between items-center">
+              <select 
+                v-model="selectedLanguage" 
+                class="bg-white text-gray-800 border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+              >
+                <option value="62">Java</option>
+                <option value="71">Python</option>
+                <option value="63">JavaScript</option>
+                <option value="54">C++</option>
+              </select>
+
+              <div class="flex items-center space-x-2">
+                <button
+                  @click="runCode"
+                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                  :disabled="submitting"
                 >
-                  <option value="62">Java</option>
-                  <option value="71">Python</option>
-                  <option value="63">JavaScript</option>
-                  <option value="54">C++</option>
-                </select>
-
-                <div class="flex items-center space-x-2">
-                  <button
-                    @click="toggleFullscreen"
-                    class="p-2 text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100"
-                    title="全屏编辑"
-                  >
-                    <i :class="['fas', isFullscreen ? 'fa-compress' : 'fa-expand']"></i>
-                  </button>
-                  <button
-                    @click="runCode"
-                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                    :disabled="submitting"
-                  >
-                    <i class="fas" :class="submitting ? 'fa-spinner fa-spin' : 'fa-play'"></i>
-                    <span>{{ submitting ? '运行中...' : '运行' }}</span>
-                  </button>
-                  <button
-                    @click="submitCode"
-                    class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-                    :disabled="submitting"
-                  >
-                    <i class="fas" :class="submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
-                    <span>{{ submitting ? '提交中...' : '提交' }}</span>
-                  </button>
-                  <button
-                    v-if="lastSubmitToken"
-                    @click="checkSubmitResult"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                    :disabled="submitting"
-                  >
-                    <i class="fas fa-history"></i>
-                    <span>查看提交结果</span>
-                  </button>
-                </div>
+                  <i class="fas fa-play"></i>
+                  <span>运行</span>
+                </button>
+                <button
+                  @click="submitCode"
+                  class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+                  :disabled="submitting"
+                >
+                  <i class="fas fa-paper-plane"></i>
+                  <span>提交</span>
+                </button>
               </div>
+            </div>
 
-              <!-- 代码编辑器 -->
-              <div class="relative" :class="{ 'h-screen': isFullscreen }">
-                <textarea
-                  v-model="code"
-                  class="w-full h-[500px] font-mono text-sm p-4 bg-gray-50 focus:outline-none resize-none"
-                  :class="{ 'h-full': isFullscreen }"
-                  :placeholder="getLanguageTemplate()"
-                  @input="handleInput"
-                  @keydown.tab.prevent="handleTab"
-                ></textarea>
-              </div>
+            <!-- 代码编辑器 -->
+            <div class="relative">
+              <textarea
+                v-model="code"
+                class="w-full h-[500px] font-mono text-sm p-4 bg-gray-50 focus:outline-none resize-none"
+                :placeholder="getLanguageTemplate()"
+                @input="handleInput"
+              ></textarea>
             </div>
 
             <!-- 在代码编辑器部分添加测试用例选择器 -->
@@ -247,7 +226,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref } from '@vue/runtime-dom'
+import type { Ref } from '@vue/runtime-core'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -308,12 +288,9 @@ const code = ref('')
 const submitting = ref(false)
 const executionResult: Ref<ExecutionResult | null> = ref(null)
 
-// 添加新的响应式变量
-const lastSubmitToken = ref('')
-
 // 获取语言模板
 const getLanguageTemplate = () => {
-  const templates: Record<string, string> = {
+  const templates = {
     '62': `public class Main {
     public static void main(String[] args) {
         // 在这里编写你的代码
@@ -338,24 +315,10 @@ int main() {
     return 0;
 }`
   }
-  return templates[selectedLanguage.value] || ''
+  return templates[selectedLanguage.value as keyof typeof templates]
 }
 
-// 获取提交结果的通用函数
-const getSubmissionResult = async (token: string) => {
-  const resultResponse = await fetch(`http://113.44.169.164:2358/submissions/${token}`)
-  const result = await resultResponse.json()
-  
-  // 如果结果还在处理中，等待后重试
-  if (result.status.id === 1 || result.status.id === 2) {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    return getSubmissionResult(token)
-  }
-  
-  return result
-}
-
-// 修改提交代码函数
+// 提交代码
 const submitCode = async () => {
   if (!code.value.trim()) {
     alert('请输入代码')
@@ -364,13 +327,15 @@ const submitCode = async () => {
 
   submitting.value = true
   try {
+    // 第一步：提交代码获取 token
     const submitResponse = await fetch('http://113.44.169.164:2358/submissions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         language_id: parseInt(selectedLanguage.value),
         source_code: code.value,
-        stdin: ""
+        stdin: problem.value.examples[0].input,
+        expected_output: problem.value.examples[0].output
       })
     })
 
@@ -379,47 +344,31 @@ const submitCode = async () => {
       throw new Error('提交失败')
     }
 
-    // 保存最后一次提交的token
-    lastSubmitToken.value = submitData.token
-
-    // 获取提交结果
-    const result = await getSubmissionResult(submitData.token)
-    executionResult.value = {
-      ...result,
-      status: {
-        ...result.status,
-        description: getStatusDescription(result.status.id)
+    // 第二步：轮询获取结果
+    let retries = 0
+    const maxRetries = 10
+    const pollResult = async () => {
+      if (retries >= maxRetries) {
+        throw new Error('获取结果超时')
       }
+
+      const resultResponse = await fetch(`http://113.44.169.164:2358/submissions/${submitData.token}`)
+      const resultData = await resultResponse.json()
+
+      if (resultData.status.id === 1 || resultData.status.id === 2) {
+        // 如果还在处理中，继续轮询
+        retries++
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        return pollResult()
+      }
+
+      return resultData
     }
 
+    executionResult.value = await pollResult()
   } catch (error) {
     console.error('提交失败:', error)
     alert('提交失败：' + (error instanceof Error ? error.message : '请重试'))
-  } finally {
-    submitting.value = false
-  }
-}
-
-// 添加查看提交结果函数
-const checkSubmitResult = async () => {
-  if (!lastSubmitToken.value) {
-    alert('没有可查看的提交记录')
-    return
-  }
-
-  submitting.value = true
-  try {
-    const result = await getSubmissionResult(lastSubmitToken.value)
-    executionResult.value = {
-      ...result,
-      status: {
-        ...result.status,
-        description: getStatusDescription(result.status.id)
-      }
-    }
-  } catch (error) {
-    console.error('获取结果失败:', error)
-    alert('获取结果失败：' + (error instanceof Error ? error.message : '请重试'))
   } finally {
     submitting.value = false
   }
@@ -440,7 +389,7 @@ const runCode = async () => {
       body: JSON.stringify({
         language_id: parseInt(selectedLanguage.value),
         source_code: code.value,
-        stdin: ""  // 不需要输入数据
+        stdin: problem.value.examples[0].input
       })
     })
 
@@ -451,15 +400,7 @@ const runCode = async () => {
 
     // 获取运行结果
     const resultResponse = await fetch(`http://113.44.169.164:2358/submissions/${data.token}`)
-    const result = await resultResponse.json()
-    
-    executionResult.value = {
-      ...result,
-      status: {
-        ...result.status,
-        description: getStatusDescription(result.status.id)
-      }
-    }
+    executionResult.value = await resultResponse.json()
   } catch (error) {
     console.error('运行失败:', error)
     alert('运行失败：' + (error instanceof Error ? error.message : '请重试'))
@@ -475,61 +416,6 @@ const handleInput = (event: Event) => {
 
 const goBack = () => {
   router.push('/problems')
-}
-
-// 添加状态描述转换函数
-const getStatusDescription = (statusId: number): string => {
-  const statusMap: Record<number, string> = {
-    1: '等待中',
-    2: '处理中',
-    3: '通过',
-    4: '编译错误',
-    5: '运行时错误',
-    6: '超时',
-    7: '内存超限',
-    8: '输出超限',
-    9: '其他错误'
-  }
-  return statusMap[statusId] || '未知状态'
-}
-
-// 添加重置代码功能
-const resetCode = () => {
-  code.value = getLanguageTemplate()
-}
-
-// 添加新的响应式变量
-const selectedTestCase = ref(0)
-const isFullscreen = ref(false)
-
-// 添加全屏切换功能
-const toggleFullscreen = () => {
-  const editorContainer = document.querySelector('.editor-container')
-  if (!editorContainer) return
-  
-  if (!document.fullscreenElement) {
-    editorContainer.requestFullscreen()
-    isFullscreen.value = true
-  } else {
-    document.exitFullscreen()
-    isFullscreen.value = false
-  }
-}
-
-// 添加 Tab 键处理函数
-const handleTab = (e: KeyboardEvent) => {
-  const target = e.target as HTMLTextAreaElement
-  const start = target.selectionStart
-  const end = target.selectionEnd
-
-  // 插入两个空格
-  const newValue = code.value.substring(0, start) + '  ' + code.value.substring(end)
-  code.value = newValue
-  
-  // 移动光标位置
-  nextTick(() => {
-    target.selectionStart = target.selectionEnd = start + 2
-  })
 }
 </script>
 
@@ -584,41 +470,5 @@ button {
 
 button:active {
   transform: translateY(1px);
-}
-
-/* 全屏模式样式 */
-.editor-container:fullscreen {
-  background: white;
-  padding: 1rem;
-}
-
-.editor-container:fullscreen textarea {
-  height: calc(100vh - 8rem);
-}
-
-/* 添加代码编辑器的行号效果 */
-textarea {
-  background-image: linear-gradient(transparent 50%, rgba(69, 142, 209, 0.04) 50%);
-  background-size: 100% 3rem;
-  line-height: 1.5rem;
-}
-
-/* 优化滚动条样式 */
-textarea::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-textarea::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-textarea::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-textarea::-webkit-scrollbar-thumb:hover {
-  background: #666;
 }
 </style> 
