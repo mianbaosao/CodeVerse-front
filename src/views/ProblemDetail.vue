@@ -1,222 +1,171 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-    <div class="container mx-auto px-4 py-8">
-      <!-- 返回按钮 -->
-      <button 
-        @click="goBack"
-        class="mb-6 text-gray-600 hover:text-gray-800 flex items-center group transition-all duration-300"
-      >
-        <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform"></i>
-        <span class="relative">
-          返回题目列表
-          <span class="absolute bottom-0 left-0 w-full h-0.5 bg-gray-500 transform scale-x-0 group-hover:scale-x-100 transition-transform"></span>
-        </span>
-      </button>
+  <div class="container mx-auto px-4 py-6">
+    <div class="grid grid-cols-12 gap-6">
+      <!-- 左侧题目详情 -->
+      <div class="col-span-12 lg:col-span-6 space-y-6">
+        <!-- 返回按钮 -->
+        <button 
+          @click="goBack"
+          class="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <i class="fas fa-arrow-left"></i>
+          <span>返回题目列表</span>
+        </button>
 
-      <div class="grid grid-cols-12 gap-6">
-        <!-- 左侧题目描述 -->
-        <div class="col-span-12 lg:col-span-6">
-          <div class="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden">
-            <!-- 题目头部 -->
-            <div class="p-6 border-b border-gray-200 relative overflow-hidden">
-              <div class="relative">
-                <div class="flex items-center justify-between mb-4">
-                  <h1 class="text-2xl font-bold text-gray-900 group">
-                    <span class="text-gray-700">#{{ problem.id }}</span> {{ problem.title }}
-                    <span class="block max-w-0 group-hover:max-w-full transition-all duration-500 h-0.5 bg-gray-500"></span>
-                  </h1>
-                  <span class="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full border border-green-200">
-                    简单
-                  </span>
+        <!-- 题目详情卡片 -->
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200">
+          <!-- 题目标题和难度 -->
+          <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900">两数之和</h1>
+              <p class="mt-2 text-gray-600">题目编号：{{ problem?.subjectId }}</p>
+            </div>
+            <span :class="[
+              'px-3 py-1 rounded-full text-sm font-medium',
+              getDifficultyClass(problem?.subjectDifficult)
+            ]">
+              {{ getDifficultyLabel(problem?.subjectDifficult) }}
+            </span>
+          </div>
+
+          <!-- 题目描述 -->
+          <div class="p-6 space-y-4 prose max-w-none">
+            <div class="text-gray-600">{{ problem?.subjectDesc }}</div>
+          </div>
+
+          <!-- 示例 -->
+          <div class="p-6 border-t border-gray-200 space-y-4">
+            <h2 class="text-lg font-medium text-gray-900">示例：</h2>
+            <div v-for="(num, index) in problem?.nums" :key="index" class="space-y-2">
+              <div class="bg-gray-50 p-4 rounded-lg space-y-2">
+                <div class="flex items-center space-x-2">
+                  <span class="text-gray-500">输入：</span>
+                  <code class="bg-gray-100 px-2 py-1 rounded text-indigo-600">
+                    nums = {{ JSON.stringify(num) }}
+                  </code>
                 </div>
-                <div class="flex items-center space-x-6 text-sm text-gray-600">
-                  <div class="flex items-center space-x-2">
-                    <i class="fas fa-chart-line text-gray-500"></i>
-                    <span>通过率：{{ problem.acceptanceRate }}%</span>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <i class="fas fa-thumbs-up text-gray-500"></i>
-                    <span>赞：{{ problem.solutions }}</span>
-                  </div>
-                  <button class="flex items-center space-x-2 hover:text-gray-900 transition-colors">
-                    <i class="fas fa-star"></i>
-                    <span>收藏</span>
-                  </button>
+                <div class="flex items-center space-x-2">
+                  <span class="text-gray-500">输出：</span>
+                  <code class="bg-gray-100 px-2 py-1 rounded text-green-600">
+                    {{ JSON.stringify(problem?.result[index]) }}
+                  </code>
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- 题目内容 -->
-            <div class="p-6 text-gray-800">
-              <div class="prose max-w-none">
-                <div class="mb-6 leading-relaxed">
-                  <p class="mb-4 text-gray-900 text-base">{{ problem.description }}</p>
-                  <div v-if="problem.examples && problem.examples.length > 0">
-                    <div v-for="(example, index) in problem.examples" 
-                      :key="index" 
-                      class="mb-4 transform hover:scale-102 transition-transform"
-                    >
-                      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <p class="font-medium text-gray-900 mb-2">示例 {{ index + 1}}:</p>
-                        <div class="space-y-1 font-mono text-sm">
-                          <div class="flex items-center space-x-2">
-                            <span class="text-gray-700 font-semibold">输入：</span>
-                            <span class="text-gray-900">{{ example.input }}</span>
-                          </div>
-                          <div class="flex items-center space-x-2">
-                            <span class="text-gray-700 font-semibold">输出：</span>
-                            <span class="text-gray-900">{{ example.output }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 提示部分 -->
-                <div class="bg-gray-50 border-l-4 border-gray-500 p-4 rounded-r-lg">
-                  <div class="flex">
-                    <div class="flex-shrink-0">
-                      <i class="fas fa-lightbulb text-gray-500 animate-pulse"></i>
-                    </div>
-                    <div class="ml-3">
-                      <h3 class="text-sm font-medium text-gray-900">提示：</h3>
-                      <div class="mt-2 text-sm space-y-1">
-                        <ul class="list-disc pl-5 space-y-1">
-                          <li v-for="(hint, index) in problem.hints" 
-                            :key="index"
-                            class="text-gray-700 hover:text-gray-900 transition-colors"
-                          >
-                            {{ hint }}
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+          <!-- 提示 -->
+          <div v-if="problem?.hints" class="p-6 border-t border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">提示：</h2>
+            <div class="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
+              <ul class="list-disc list-inside space-y-2 text-gray-600">
+                <li v-for="(hint, index) in formatHints(problem.hints)" :key="index">
+                  {{ hint }}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- 右侧代码编辑器 -->
-        <div class="col-span-12 lg:col-span-6 space-y-4">
-          <div class="bg-white rounded-lg shadow-xl border border-gray-200">
-            <!-- 语言选择器 -->
-            <div class="border-b border-gray-200 p-4 bg-gray-50 flex justify-between items-center">
-              <select 
-                v-model="selectedLanguage" 
-                class="bg-white text-gray-800 border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+      <!-- 右侧代码编辑器 -->
+      <div class="col-span-12 lg:col-span-6 space-y-4">
+        <div class="bg-white rounded-lg shadow-xl border border-gray-200">
+          <!-- 语言选择器和工具栏 -->
+          <div class="border-b border-gray-200 p-4 bg-gray-50 flex justify-between items-center">
+            <select 
+              v-model="selectedLanguage" 
+              class="bg-white text-gray-800 border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+            >
+              <option value="62">Java</option>
+              <option value="71">Python</option>
+              <option value="63">JavaScript</option>
+              <option value="54">C++</option>
+            </select>
+
+            <div class="flex items-center space-x-2">
+              <button
+                @click="toggleFullscreen"
+                class="p-2 text-gray-600 hover:text-gray-800 rounded-lg hover:bg-gray-100"
+                title="全屏编辑"
               >
-                <option value="62">Java</option>
-                <option value="71">Python</option>
-                <option value="63">JavaScript</option>
-                <option value="54">C++</option>
-              </select>
-
-              <div class="flex items-center space-x-2">
-                <button
-                  @click="runCode"
-                  class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-                  :disabled="submitting"
-                >
-                  <i class="fas fa-play"></i>
-                  <span>运行</span>
-                </button>
-                <button
-                  @click="submitCode"
-                  class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-                  :disabled="submitting"
-                >
-                  <i class="fas fa-paper-plane"></i>
-                  <span>提交</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- 代码编辑器 -->
-            <div class="relative">
-              <textarea
-                v-model="code"
-                class="w-full h-[500px] font-mono text-sm p-4 bg-gray-50 focus:outline-none resize-none"
-                :placeholder="getLanguageTemplate()"
-                @input="handleInput"
-              ></textarea>
-            </div>
-
-            <!-- 在代码编辑器部分添加测试用例选择器 -->
-            <div class="border-b border-gray-200 p-4 bg-gray-50">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                  <span class="text-sm text-gray-600">测试用例:</span>
-                  <select 
-                    v-model="selectedTestCase"
-                    class="bg-white text-gray-800 border border-gray-200 rounded px-3 py-2 focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  >
-                    <option 
-                      v-for="(example, index) in problem.examples"
-                      :key="index"
-                      :value="index"
-                    >
-                      测试用例 {{ index + 1 }}
-                    </option>
-                  </select>
-                </div>
-                <button
-                  @click="resetCode"
-                  class="text-gray-600 hover:text-gray-800 flex items-center space-x-1"
-                >
-                  <i class="fas fa-undo"></i>
-                  <span>重置代码</span>
-                </button>
-              </div>
+                <i :class="['fas', isFullscreen ? 'fa-compress' : 'fa-expand']"></i>
+              </button>
+              <button
+                @click="runCode"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                :disabled="submitting"
+              >
+                <i class="fas" :class="submitting ? 'fa-spinner fa-spin' : 'fa-play'"></i>
+                <span>{{ submitting ? '运行中...' : '运行' }}</span>
+              </button>
+              <button
+                @click="submitCode"
+                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+                :disabled="submitting"
+              >
+                <i class="fas" :class="submitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
+                <span>{{ submitting ? '提交中...' : '提交' }}</span>
+              </button>
             </div>
           </div>
 
-          <!-- 执行结果 -->
-          <div v-if="executionResult" 
-            class="bg-white rounded-lg shadow-xl border border-gray-200 p-4"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-medium text-gray-900">执行结果</h3>
-              <div :class="[
-                'px-2 py-1 rounded-full text-sm',
-                executionResult.status.id === 3 
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-              ]">
-                {{ executionResult.status.description }}
-              </div>
-            </div>
+          <!-- 代码编辑器 -->
+          <div class="relative" :class="{ 'h-screen': isFullscreen }">
+            <textarea
+              v-model="code"
+              class="w-full h-[500px] font-mono text-sm p-4 bg-gray-50 focus:outline-none resize-none"
+              :class="{ 'h-full': isFullscreen }"
+              :placeholder="getLanguageTemplate()"
+              @input="handleInput"
+              @keydown.tab.prevent="handleTab"
+            ></textarea>
+          </div>
+        </div>
 
-            <!-- 输出结果 -->
-            <div v-if="executionResult.stdout" class="mb-4">
-              <div class="text-sm text-gray-600 mb-2">输出:</div>
-              <pre class="bg-gray-50 p-3 rounded text-sm">{{ executionResult.stdout }}</pre>
+        <!-- 执行结果 -->
+        <div v-if="executionResult" 
+          class="bg-white rounded-lg shadow-xl border border-gray-200 p-4"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-medium text-gray-900">执行结果</h3>
+            <div :class="[
+              'px-2 py-1 rounded-full text-sm',
+              executionResult.status.id === 3 
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            ]">
+              {{ executionResult.status.description }}
             </div>
+          </div>
 
-            <!-- 编译错误 -->
-            <div v-if="executionResult.compile_output" class="mb-4">
-              <div class="text-sm text-red-600 mb-2">编译错误:</div>
-              <pre class="bg-red-50 p-3 rounded text-sm text-red-700">{{ executionResult.compile_output }}</pre>
+          <!-- 输出结果 -->
+          <div v-if="executionResult.stdout" class="mb-4">
+            <div class="text-sm text-gray-600 mb-2">输出:</div>
+            <pre class="bg-gray-50 p-3 rounded text-sm">{{ executionResult.stdout }}</pre>
+          </div>
+
+          <!-- 编译错误 -->
+          <div v-if="executionResult.compile_output" class="mb-4">
+            <div class="text-sm text-red-600 mb-2">编译错误:</div>
+            <pre class="bg-red-50 p-3 rounded text-sm text-red-700">{{ executionResult.compile_output }}</pre>
+          </div>
+
+          <!-- 运行时错误 -->
+          <div v-if="executionResult.stderr" class="mb-4">
+            <div class="text-sm text-red-600 mb-2">运行时错误:</div>
+            <pre class="bg-red-50 p-3 rounded text-sm text-red-700">{{ executionResult.stderr }}</pre>
+          </div>
+
+          <!-- 执行统计 -->
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="bg-gray-50 p-3 rounded">
+              <span class="text-gray-600">执行时间：</span>
+              <span class="text-gray-900">{{ executionResult.time }}s</span>
             </div>
-
-            <!-- 运行时错误 -->
-            <div v-if="executionResult.stderr" class="mb-4">
-              <div class="text-sm text-red-600 mb-2">运行时错误:</div>
-              <pre class="bg-red-50 p-3 rounded text-sm text-red-700">{{ executionResult.stderr }}</pre>
-            </div>
-
-            <!-- 执行统计 -->
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div class="bg-gray-50 p-3 rounded">
-                <span class="text-gray-600">执行时间：</span>
-                <span class="text-gray-900">{{ executionResult.time }}s</span>
-              </div>
-              <div class="bg-gray-50 p-3 rounded">
-                <span class="text-gray-600">内存使用：</span>
-                <span class="text-gray-900">{{ (executionResult.memory / 1024).toFixed(2) }}MB</span>
-              </div>
+            <div class="bg-gray-50 p-3 rounded">
+              <span class="text-gray-600">内存使用：</span>
+              <span class="text-gray-900">{{ (executionResult.memory / 1024).toFixed(2) }}MB</span>
             </div>
           </div>
         </div>
@@ -226,155 +175,181 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from '@vue/runtime-dom'
-import type { Ref } from '@vue/runtime-core'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, nextTick } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
 const router = useRouter()
 
-interface Problem {
+interface ProblemDetail {
   id: number
-  title: string
-  difficulty: 'easy' | 'medium' | 'hard'
-  description: string
-  acceptanceRate: number
-  solutions: number
-  examples: Array<{
-    input: string
-    output: string
-  }>
-  hints: string[]
+  subjectId: number
+  subjectDesc: string
+  subjectDifficult?: number
+  nums: any[][]
+  result: any[][]
+  hints: string
 }
 
-const problem: Ref<Problem> = ref({
-  id: 283,
-  title: '移动零',
-  difficulty: 'easy',
-  description: '给定一个数组 nums，编写一个函数将所有 0 移到数组的末尾，同时保持非零元素的相对顺序。',
-  acceptanceRate: 54.4,
-  solutions: 2500,
-  examples: [
-    {
-      input: 'nums = [0,1,0,3,12]',
-      output: '[1,3,12,0,0]'
-    },
-    {
-      input: 'nums = [0]',
-      output: '[0]'
-    }
-  ],
-  hints: [
-    '1 ≤ nums.length ≤ 10⁴',
-    '-2³¹ <= nums[i] <= 2³¹ - 1'
-  ]
-})
+const problem = ref<ProblemDetail | null>(null)
 
-interface ExecutionResult {
-  stdout: string | null
-  time: string
-  memory: number
-  stderr: string | null
-  token: string
-  compile_output: string | null
-  message: string | null
-  status: {
-    id: number
-    description: string
+// 添加代码编辑器相关的状态
+const selectedLanguage = ref('62')  // 默认选择 Java
+const code = ref('')
+const isFullscreen = ref(false)
+const submitting = ref(false)
+const executionResult = ref(null)
+
+// 获取题目详情
+const fetchProblemDetail = async () => {
+  try {
+    const response = await fetch('http://localhost:3010/subject/queryCodeSubjectInfo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: route.params.id
+      })
+    })
+
+    const data = await response.json()
+    if (data.success) {
+      problem.value = data.data
+    }
+  } catch (error) {
+    console.error('获取题目详情失败:', error)
   }
 }
 
-const selectedLanguage = ref('62') // 默认选择 Java
-const code = ref('')
-const submitting = ref(false)
-const executionResult: Ref<ExecutionResult | null> = ref(null)
+// 格式化提示文本
+const formatHints = (hints: string): string[] => {
+  return hints
+    .replace(/\\n/g, '\n')  // 替换转义的换行符
+    .split('\n')
+    .filter(hint => hint.trim())  // 过滤空行
+}
+
+// 获取难度标签
+const getDifficultyLabel = (difficult?: number): string => {
+  return ['', '简单', '中等', '困难'][difficult || 0] || '未知'
+}
+
+// 获取难度样式
+const getDifficultyClass = (difficult?: number): string => {
+  const classes = {
+    1: 'bg-green-100 text-green-800',
+    2: 'bg-yellow-100 text-yellow-800',
+    3: 'bg-red-100 text-red-800'
+  }
+  return classes[difficult as keyof typeof classes] || 'bg-gray-100 text-gray-800'
+}
+
+// 返回题目列表
+const goBack = () => {
+  router.push('/problems')
+}
 
 // 获取语言模板
 const getLanguageTemplate = () => {
   const templates = {
-    '62': `public class Main {
+    '62': `// 请在此处编写你的代码
+public class Main {
     public static void main(String[] args) {
-        // 在这里编写你的代码
+        Solution solution = new Solution();
+        // 测试代码
     }
-}`,
-    '71': `def main():
-    # 在这里编写你的代码
-    pass
-
-if __name__ == "__main__":
-    main()`,
-    '63': `function main() {
-    // 在这里编写你的代码
 }
 
-main();`,
-    '54': `#include <iostream>
-using namespace std;
+class Solution {
+    // 请在此处编写解题代码
+    
+}`,
+    '71': `class Solution:
+    # 请在此处编写解题代码
+    pass
+
+# 测试代码
+if __name__ == "__main__":
+    solution = Solution()
+    # 测试代码`,
+    '63': `class Solution {
+    // 请在此处编写解题代码
+    
+}
+
+// 测试代码
+const solution = new Solution();
+// 测试代码`,
+    '54': `class Solution {
+public:
+    // 请在此处编写解题代码
+    
+};
 
 int main() {
-    // 在这里编写你的代码
+    Solution solution;
+    // 测试代码
     return 0;
 }`
   }
-  return templates[selectedLanguage.value as keyof typeof templates]
+  return templates[selectedLanguage.value as keyof typeof templates] || ''
 }
 
-// 提交代码
-const submitCode = async () => {
-  if (!code.value.trim()) {
-    alert('请输入代码')
-    return
+// 处理全屏切换
+const toggleFullscreen = () => {
+  isFullscreen.value = !isFullscreen.value
+}
+
+// 处理Tab键
+const handleTab = (e: KeyboardEvent) => {
+  const target = e.target as HTMLTextAreaElement
+  const start = target.selectionStart
+  const end = target.selectionEnd
+
+  code.value = code.value.substring(0, start) + '    ' + code.value.substring(end)
+  nextTick(() => {
+    target.selectionStart = target.selectionEnd = start + 4
+  })
+}
+
+// 添加 handleInput 函数定义
+const handleInput = (event: Event) => {
+  const target = event.target as HTMLTextAreaElement
+  code.value = target.value
+}
+
+// 添加延迟函数
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+// 修改状态描述转换函数，添加更多状态
+const getStatusDescription = (statusId: number): string => {
+  const statusMap: Record<number, string> = {
+    1: '等待中',
+    2: '处理中',
+    3: '通过',
+    4: '编译错误',
+    5: '运行时错误',
+    6: '答案错误',
+    7: '时间超限',
+    8: '内存超限',
+    9: '输出超限',
+    10: '系统错误'
   }
+  return statusMap[statusId] || '未知状态'
+}
 
-  submitting.value = true
-  try {
-    // 第一步：提交代码获取 token
-    const submitResponse = await fetch('http://113.44.169.164:2358/submissions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        language_id: parseInt(selectedLanguage.value),
-        source_code: code.value,
-        stdin: problem.value.examples[0].input,
-        expected_output: problem.value.examples[0].output
-      })
-    })
-
-    const submitData = await submitResponse.json()
-    if (!submitData.token) {
-      throw new Error('提交失败')
-    }
-
-    // 第二步：轮询获取结果
-    let retries = 0
-    const maxRetries = 10
-    const pollResult = async () => {
-      if (retries >= maxRetries) {
-        throw new Error('获取结果超时')
-      }
-
-      const resultResponse = await fetch(`http://113.44.169.164:2358/submissions/${submitData.token}`)
-      const resultData = await resultResponse.json()
-
-      if (resultData.status.id === 1 || resultData.status.id === 2) {
-        // 如果还在处理中，继续轮询
-        retries++
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        return pollResult()
-      }
-
-      return resultData
-    }
-
-    executionResult.value = await pollResult()
-  } catch (error) {
-    console.error('提交失败:', error)
-    alert('提交失败：' + (error instanceof Error ? error.message : '请重试'))
-  } finally {
-    submitting.value = false
+// 修改运行和提交函数，添加错误处理
+const handleSubmissionError = (error: unknown, type: '运行' | '提交') => {
+  console.error(`${type}失败:`, error)
+  if (error instanceof Error) {
+    alert(`${type}失败：${error.message}`)
+  } else if (typeof error === 'string') {
+    alert(`${type}失败：${error}`)
+  } else {
+    alert(`${type}失败：请重试`)
   }
 }
 
-// 运行代码（使用示例输入）
+// 修改运行代码函数
 const runCode = async () => {
   if (!code.value.trim()) {
     alert('请输入代码')
@@ -389,34 +364,78 @@ const runCode = async () => {
       body: JSON.stringify({
         language_id: parseInt(selectedLanguage.value),
         source_code: code.value,
-        stdin: problem.value.examples[0].input
+        stdin: ''
       })
     })
 
     const data = await response.json()
     if (!data.token) {
-      throw new Error('运行失败')
+      throw new Error('获取提交ID失败')
     }
 
-    // 获取运行结果
+    await delay(2000)
+
     const resultResponse = await fetch(`http://113.44.169.164:2358/submissions/${data.token}`)
+    if (!resultResponse.ok) {
+      throw new Error('获取结果失败')
+    }
+
     executionResult.value = await resultResponse.json()
   } catch (error) {
-    console.error('运行失败:', error)
-    alert('运行失败：' + (error instanceof Error ? error.message : '请重试'))
+    handleSubmissionError(error, '运行')
   } finally {
     submitting.value = false
   }
 }
 
-const handleInput = (event: Event) => {
-  const target = event.target as HTMLTextAreaElement
-  code.value = target.value
+// 提交代码
+const submitCode = async () => {
+  if (!code.value.trim()) {
+    alert('请输入代码')
+    return
+  }
+
+  submitting.value = true
+  try {
+    const submitResponse = await fetch('http://113.44.169.164:2358/submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language_id: parseInt(selectedLanguage.value),
+        source_code: code.value,
+        stdin: ''
+      })
+    })
+
+    const submitData = await submitResponse.json()
+    if (!submitData.token) {
+      throw new Error('提交失败')
+    }
+
+    // 等待2秒后再获取结果
+    await delay(2000)
+
+    // 获取提交结果
+    const resultResponse = await fetch(`http://113.44.169.164:2358/submissions/${submitData.token}`)
+    const resultData = await resultResponse.json()
+    executionResult.value = {
+      ...resultData,
+      status: {
+        ...resultData.status,
+        description: getStatusDescription(resultData.status.id)
+      }
+    }
+  } catch (error) {
+    console.error('提交失败:', error)
+    alert('提交失败：' + (error instanceof Error ? error.message : '请重试'))
+  } finally {
+    submitting.value = false
+  }
 }
 
-const goBack = () => {
-  router.push('/problems')
-}
+onMounted(() => {
+  fetchProblemDetail()
+})
 </script>
 
 <style scoped>
@@ -428,6 +447,12 @@ const goBack = () => {
   @apply mb-4;
 }
 
+/* 添加代码块样式 */
+code {
+  font-family: 'Fira Code', monospace;
+}
+
+/* 添加渐入动画 */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -435,40 +460,5 @@ const goBack = () => {
 
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
-}
-
-/* 移除代码编辑器的条纹背景 */
-/* textarea {
-  background-image: linear-gradient(transparent 50%, rgba(34, 197, 94, 0.05) 50%);
-  background-size: 100% 3rem;
-  background-position: 0 -2px;
-} */
-
-/* 添加悬浮效果 */
-.transform:hover {
-  transform: scale(1.02);
-  transition: transform 0.2s ease-out;
-}
-
-/* 添加科技感光效 */
-.bg-gradient-to-br {
-  background-size: 400% 400%;
-  animation: gradient 15s ease infinite;
-}
-
-@keyframes gradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* 添加按钮点击效果 */
-button {
-  transform: translateY(0);
-  transition: transform 0.1s ease;
-}
-
-button:active {
-  transform: translateY(1px);
 }
 </style> 
