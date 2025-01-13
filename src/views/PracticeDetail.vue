@@ -37,8 +37,8 @@
           <div v-if="currentSubject" class="space-y-8">
             <h2 class="text-lg text-gray-800">{{ currentSubject.subjectName }}</h2>
 
-            <!-- 选项列表 -->
-            <div class="space-y-4">
+            <!-- 选择题选项 -->
+            <div v-if="currentSubject.subjectType === 1" class="space-y-4">
               <label
                 v-for="option in currentSubject.optionList"
                 :key="option.optionType"
@@ -55,7 +55,6 @@
                   :value="option.optionType"
                   v-model="selectedOption"
                   class="hidden"
-                  @change="handleOptionSelect(option.optionType)"
                 />
                 <span class="w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm"
                   :class="[
@@ -68,6 +67,16 @@
                 </span>
                 <span class="text-gray-700">{{ option.optionContent }}</span>
               </label>
+            </div>
+
+            <!-- 简答题答题区域 -->
+            <div v-else-if="currentSubject.subjectType === 4" class="space-y-4">
+              <textarea
+                v-model="selectedOption"
+                rows="6"
+                class="w-full p-4 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="请在此输入你的答案..."
+              ></textarea>
             </div>
           </div>
 
@@ -213,12 +222,19 @@ interface Subject {
 }
 
 interface SubjectDetail {
+  subjectId: number
   subjectName: string
   subjectType: number
-  optionList: Array<{
+  subjectDifficult: number
+  subjectScore: number
+  subjectParse: string
+  optionList?: Array<{
     optionType: number
     optionContent: string
+    isCorrect: number
   }>
+  // 简答题特有字段
+  subjectAnswer?: string
 }
 
 interface PracticeResponse {
@@ -293,12 +309,13 @@ const fetchCurrentSubject = async () => {
   try {
     loading.value = true
     const subject = subjects.value[currentIndex.value]
-    const response = await fetch('http://localhost:3013/practice/set/getPracticeSubject', {
+    
+    // 根据题目类型调用不同的接口
+    const response = await fetch('http://localhost:3010/subject/querySubjectInfo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        subjectId: subject.subjectId,
-        subjectType: subject.subjectType
+        id: subject.subjectId
       })
     })
 
@@ -386,7 +403,7 @@ const nextQuestion = async () => {
       
     } catch (error) {
       console.error('提交答案失败:', error)
-      alert('提交答案失��，请重试')
+      alert('提交答案失败，请重试')
     } finally {
       loading.value = false
     }
@@ -532,6 +549,33 @@ const isSubmitted = ref(false)
 
 // 添加新的响应式变量
 const showSubmitConfirm = ref(false)
+
+// 修改提交答案的函数
+const submitSingleQuestion = async () => {
+  if (!currentSubject.value || selectedOption.value === null) return
+
+  try {
+    const response = await fetch('http://localhost:3013/practice/detail/submitSubject', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        practiceId: practiceId.value,
+        subjectId: currentSubject.value.subjectId,
+        answerContents: [selectedOption.value],
+        subjectType: currentSubject.value.subjectType,
+        timeUse: formatTimeForSubmit(timer.value)
+      })
+    })
+
+    const data = await response.json()
+    if (!data.success) {
+      throw new Error(data.message || '提交答案失败')
+    }
+  } catch (error) {
+    console.error('提交答案失败:', error)
+    throw error
+  }
+}
 
 onMounted(() => {
   fetchPracticeSubjects()

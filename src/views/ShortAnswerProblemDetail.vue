@@ -79,24 +79,26 @@ import { useRoute, useRouter } from 'vue-router'
 const route = useRoute()
 const router = useRouter()
 
-interface ShortAnswerProblem {
+interface Problem {
   id: number
   subjectName: string
-  subjectDifficult: 1 | 2  // 1-中等 2-困难
-  labelName: string[]
+  subjectDifficult: number
+  subjectType: number
+  subjectScore: number
   subjectParse: string
-  subjectAnswer: string  // 添加 subjectAnswer 字段
-  subjectType: number    // 添加 subjectType 字段
+  subjectAnswer: string
+  labelName: string[]
 }
 
-const problem: Ref<ShortAnswerProblem> = ref({
+const problem = ref<Problem>({
   id: 0,
   subjectName: '',
   subjectDifficult: 1,
-  labelName: [],
+  subjectType: 4,
+  subjectScore: 0,
   subjectParse: '',
-  subjectAnswer: '',  // 初始化 subjectAnswer
-  subjectType: 4     // 初始化 subjectType
+  subjectAnswer: '',
+  labelName: []
 })
 
 const answer: Ref<string> = ref('')
@@ -116,12 +118,10 @@ const fetchProblemDetail = async () => {
     })
     const data = await response.json()
     if (data.success) {
-      // 确保是简答题
-      if (data.data.subjectType === 4) {
-        problem.value = data.data
-      } else {
-        // 如果不是简答题，可以添加错误处理
-        console.error('不是简答题类型')
+      problem.value = data.data
+      // 处理换行符
+      if (problem.value.subjectAnswer) {
+        problem.value.subjectAnswer = problem.value.subjectAnswer.replace(/\\n/g, '\n')
       }
     }
   } catch (error) {

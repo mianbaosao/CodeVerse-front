@@ -4,13 +4,10 @@
       <!-- 返回按钮 -->
       <button 
         @click="goBack"
-        class="mb-6 text-gray-600 hover:text-gray-800 flex items-center group transition-all duration-300"
+        class="mb-6 text-gray-600 hover:text-gray-800 flex items-center group"
       >
         <i class="fas fa-arrow-left mr-2 transform group-hover:-translate-x-1 transition-transform"></i>
-        <span class="relative">
-          返回题目列表
-          <span class="absolute bottom-0 left-0 w-full h-0.5 bg-gray-500 transform scale-x-0 group-hover:scale-x-100 transition-transform"></span>
-        </span>
+        <span>返回题目列表</span>
       </button>
 
       <!-- 题目卡片 -->
@@ -27,6 +24,15 @@
                 {{ problem.subjectScore }} 分
               </span>
             </div>
+          </div>
+          <!-- 标签展示 -->
+          <div class="flex items-center space-x-2">
+            <span v-for="tag in problem.labelName" 
+              :key="tag"
+              class="px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600"
+            >
+              {{ tag }}
+            </span>
           </div>
         </div>
 
@@ -123,8 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from '@vue/runtime-dom'
-import type { Ref } from '@vue/runtime-core'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -156,10 +161,10 @@ const problem = ref<Problem>({
   subjectParse: '',
   optionList: [],
   labelName: []
-}) as Ref<Problem>
+})
 
-const selectedOption = ref<number | null>(null) as Ref<number | null>
-const hasSubmitted = ref(false) as Ref<boolean>
+const selectedOption = ref<number | null>(null)
+const hasSubmitted = ref(false)
 
 // 获取题目详情
 const fetchProblemDetail = async () => {
@@ -250,51 +255,5 @@ onMounted(() => {
 .fa-check-circle,
 .fa-times-circle {
   animation: icon-pop 0.3s ease-out;
-}
-
-/* 添加选项整体的悬浮效果 */
-.space-y-4 > div {
-  position: relative;
-  padding: 0.5rem;
-  margin: -0.5rem;
-  cursor: pointer;
-}
-
-.space-y-4 > div::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 1rem;
-  @apply bg-gradient-to-r from-blue-50/0 to-indigo-50/0;
-  transition: all 0.3s ease;
-  z-index: -1;
-}
-
-.space-y-4 > div:hover::after {
-  @apply from-blue-50/50 to-indigo-50/50;
-}
-
-/* 优化选项内容的样式 */
-.flex-1 {
-  position: relative;
-  overflow: hidden;
-}
-
-.flex-1::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  @apply bg-gradient-to-r from-transparent to-transparent;
-  transition: all 0.3s ease;
-}
-
-.flex-1:hover::before {
-  @apply from-blue-50/30 to-indigo-50/30;
-}
-
-/* 优化图标样式 */
-.fa-check-circle,
-.fa-times-circle {
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.1));
 }
 </style> 

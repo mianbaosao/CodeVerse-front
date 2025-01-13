@@ -261,7 +261,7 @@
           >
             <div 
               class="cursor-pointer"
-              @click.stop="goToProblem(problem.id)"
+              @click.stop="goToProblem(problem.id, problem.subjectType)"
             >
               <div class="flex items-center justify-between mb-2">
                 <h3 class="text-lg font-medium text-gray-900 group-hover:text-indigo-600 transition-colors">
@@ -590,7 +590,7 @@ const fetchShortAnswerProblems = async () => {
 }
 
 // 跳转到题目详情
-const goToProblem = (id: number) => {
+const goToProblem = (id: number, type: number) => {
   // 保存当前状态
   sessionStorage.setItem('problemListState', JSON.stringify({
     type: selectedType.value,
@@ -599,13 +599,20 @@ const goToProblem = (id: number) => {
     page: currentPage.value
   }))
   
-  const path = {
-    programming: '/problem',
-    choice: '/choice',
-    'short-answer': '/short-answer'
-  }[selectedType.value]
-  
-  router.push(`${path}/${id}`)
+  // 根据题目类型跳转到不同页面
+  switch (type) {
+    case 1: // 选择题
+      router.push(`/choice/${id}`)
+      break
+    case 4: // 简答题
+      router.push(`/short-answer/${id}`)
+      break
+    case 5: // 编程题
+      router.push(`/problem/${id}`)
+      break
+    default:
+      console.error('未知题目类型')
+  }
 }
 
 // 监听分页变化
