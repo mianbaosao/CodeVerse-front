@@ -58,8 +58,8 @@ const router = createRouter({
     },
     {
       path: '/community',
-      name: 'Community',
-      component: Community
+      name: 'GPT',
+      component: () => import('@/views/GPT.vue')
     },
     {
       path: '/add-problem',

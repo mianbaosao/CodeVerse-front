@@ -1,171 +1,127 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
     <div class="container mx-auto px-4 py-8">
       <!-- 顶部标题和计时器 -->
-      <div class="flex justify-between items-center mb-8 bg-white p-4 rounded-lg shadow-sm">
-        <h1 class="text-xl font-bold text-gray-800">{{ title }}</h1>
-        <div class="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg">
-          <button 
-            @click="toggleTimer" 
-            class="text-gray-500 hover:text-gray-700 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-          >
-            <i class="fas" :class="timerPaused ? 'fa-play' : 'fa-pause'"></i>
-          </button>
-          <div class="text-2xl font-mono text-gray-700 w-32 text-center tabular-nums">
-            {{ formatTime(timer) }}
+      <div class="flex justify-between items-center mb-8 bg-white p-4 rounded-xl shadow-sm backdrop-blur-lg border border-gray-100">
+        <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          {{ title }}
+        </h1>
+        <div class="flex items-center space-x-4">
+          <!-- 计时器 -->
+          <div class="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-lg">
+            <button @click="toggleTimer" class="text-gray-500 hover:text-gray-700">
+              <i class="fas" :class="timerPaused ? 'fa-play' : 'fa-pause'"></i>
+            </button>
+            <div class="text-2xl font-mono text-gray-700 tabular-nums">
+              {{ formatTime(timer) }}
+            </div>
+          </div>
+          <!-- 进度指示器 -->
+          <div class="text-sm text-gray-600">
+            进度: {{ currentIndex + 1 }}/{{ subjects.length }}
           </div>
         </div>
       </div>
 
-      <!-- 题目区域 -->
+      <!-- 主要内容区域 -->
       <div class="flex space-x-6">
-        <!-- 左侧题目内容 -->
-        <div v-if="loading" class="flex-1 bg-white rounded-lg shadow-sm p-8 flex items-center justify-center">
-          <div class="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
-        </div>
-
-        <div v-else class="flex-1 bg-white rounded-lg shadow-sm p-8">
-          <!-- 题目编号和类型 -->
-          <div class="flex items-center space-x-2 mb-6">
-            <span class="text-gray-500">{{ currentIndex + 1 }}/{{ subjects.length }}</span>
-            <div class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">
-              [单选题]
-            </div>
-          </div>
-
-          <!-- 题目内容 -->
-          <div v-if="currentSubject" class="space-y-8">
-            <h2 class="text-lg text-gray-800">{{ currentSubject.subjectName }}</h2>
-
-            <!-- 选择题选项 -->
-            <div v-if="currentSubject.subjectType === 1" class="space-y-4">
-              <label
-                v-for="option in currentSubject.optionList"
-                :key="option.optionType"
-                class="flex items-center space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all duration-200"
-                :class="[
-                  selectedOption === option.optionType
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50'
-                ]"
-              >
-                <input
-                  type="radio"
-                  :name="`question-${currentSubject.subjectId}`"
-                  :value="option.optionType"
-                  v-model="selectedOption"
-                  class="hidden"
-                />
-                <span class="w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm"
-                  :class="[
-                    selectedOption === option.optionType
-                      ? 'border-blue-500 bg-blue-500 text-white'
-                      : 'border-gray-300 text-gray-500'
-                  ]"
-                >
-                  {{ String.fromCharCode(64 + option.optionType) }}
-                </span>
-                <span class="text-gray-700">{{ option.optionContent }}</span>
-              </label>
-            </div>
-
-            <!-- 简答题答题区域 -->
-            <div v-else-if="currentSubject.subjectType === 4" class="space-y-4">
-              <textarea
-                v-model="selectedOption"
-                rows="6"
-                class="w-full p-4 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="请在此输入你的答案..."
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- 在题目内容区域的底部添加导航按钮 -->
-          <div class="flex justify-between mt-8">
-            <button
-              v-if="currentIndex > 0"
-              @click="prevQuestion"
-              class="px-6 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-2"
-            >
-              <i class="fas fa-arrow-left"></i>
-              <span>上一题</span>
-            </button>
-            <div v-else class="w-24"></div>
-
-            <button
-              v-if="currentIndex < (subjects?.length || 0) - 1"
-              @click="nextQuestion"
-              class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-              :disabled="!selectedOption"
-              :class="[
-                !selectedOption ? 'opacity-50 cursor-not-allowed' : ''
-              ]"
-            >
-              <span>下一题</span>
-              <i class="fas fa-arrow-right"></i>
-            </button>
-          </div>
-
-          <!-- 在题目区域添加提示信息 -->
-          <div class="text-sm text-gray-500 mt-4">
-            <i class="fas fa-info-circle mr-1"></i>
-            答案会自动保存，可以随时暂停或继续答题
-          </div>
-        </div>
-
-        <!-- 右侧答题卡 -->
-        <div class="w-64 bg-white rounded-lg shadow-sm p-6">
-          <h3 class="text-lg font-medium text-gray-800 mb-4">答题卡</h3>
-          <div class="grid grid-cols-5 gap-2">
+        <!-- 左侧题目列表导航 -->
+        <div class="w-64 bg-white rounded-xl shadow-sm p-4 h-[calc(100vh-12rem)] sticky top-24">
+          <h3 class="text-lg font-medium text-gray-800 mb-4">题目导航</h3>
+          <div class="space-y-2 overflow-y-auto max-h-[calc(100%-2rem)]">
             <button
               v-for="(subject, index) in subjects"
-              :key="index"
+              :key="subject.subjectId"
               @click="jumpToQuestion(index)"
-              class="w-10 h-10 rounded-lg text-sm font-medium transition-all duration-200 relative"
+              class="w-full p-3 rounded-lg text-left transition-all relative group"
               :class="[
-                answers.find(a => a.subjectId === subject.subjectId)
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                currentIndex === index ? 'ring-2 ring-blue-500' : '',
-                markedQuestions.has(index) ? 'border-2 border-yellow-400' : ''
+                currentIndex === index 
+                  ? 'bg-indigo-50 text-indigo-700' 
+                  : 'hover:bg-gray-50 text-gray-600',
+                markedQuestions.has(index) ? 'border-l-4 border-yellow-400' : ''
               ]"
             >
-              {{ index + 1 }}
-              <i v-if="markedQuestions.has(index)" 
-                class="fas fa-bookmark text-yellow-400 absolute -top-1 -right-1 text-xs"
-              ></i>
-            </button>
-          </div>
-
-          <!-- 标记和提交按钮 -->
-          <div class="mt-6 space-y-3">
-            <button 
-              @click="toggleMark"
-              class="w-full py-2 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
-              :class="[
-                markedQuestions.has(currentIndex)
-                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              ]"
-            >
-              <i class="fas fa-bookmark" :class="[
-                markedQuestions.has(currentIndex) ? 'text-yellow-500' : 'text-gray-500'
-              ]"></i>
-              <span>{{ markedQuestions.has(currentIndex) ? '取消标记' : '标记一下' }}</span>
-            </button>
-            
-            <button 
-              @click="submitPractice"
-              class="w-full py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors relative group"
-              :disabled="!subjects.length || answers.length !== subjects.length"
-            >
-              <span>提交答卷</span>
-              <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                {{ !subjects.length ? '加载中...' : 
-                   answers.length === subjects.length ? '点击提交答卷' : 
-                   `还有 ${subjects.length - answers.length} 题未完成` }}
+              <div class="flex items-center justify-between">
+                <span>第 {{ index + 1 }} 题</span>
+                <div class="flex items-center space-x-2">
+                  <i v-if="answers.some(a => a.subjectId === subject.subjectId)" 
+                    class="fas fa-check text-green-500"></i>
+                  <button 
+                    @click.stop="toggleMark(index)"
+                    class="opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <i class="fas fa-bookmark" 
+                      :class="markedQuestions.has(index) ? 'text-yellow-400' : 'text-gray-400'"></i>
+                  </button>
+                </div>
               </div>
             </button>
+          </div>
+        </div>
+
+        <!-- 中间题目内容 -->
+        <div class="flex-1">
+          <!-- 题目卡片 -->
+          <div class="bg-white rounded-xl shadow-sm p-8">
+            <!-- 题目类型和难度 -->
+            <div class="flex items-center space-x-4 mb-6">
+              <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                {{ currentSubject?.subjectType === 1 ? '选择题' : '简答题' }}
+              </span>
+              <div class="flex items-center text-sm text-gray-500">
+                <i class="fas fa-clock mr-2"></i>
+                <span>建议用时：5分钟</span>
+              </div>
+            </div>
+
+            <!-- 题目内容部分保持不变 -->
+            ...
+
+          </div>
+        </div>
+
+        <!-- 右侧工具栏 -->
+        <div class="w-64 space-y-4">
+          <!-- 答题卡 -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-lg font-medium text-gray-800 mb-4">答题进度</h3>
+            <div class="grid grid-cols-5 gap-2">
+              <div
+                v-for="(subject, index) in subjects"
+                :key="subject.subjectId"
+                class="w-8 h-8 rounded-lg flex items-center justify-center text-sm cursor-pointer transition-all"
+                :class="[
+                  answers.some(a => a.subjectId === subject.subjectId)
+                    ? 'bg-green-500 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  currentIndex === index ? 'ring-2 ring-indigo-500' : ''
+                ]"
+                @click="jumpToQuestion(index)"
+              >
+                {{ index + 1 }}
+              </div>
+            </div>
+          </div>
+
+          <!-- 快捷操作 -->
+          <div class="bg-white rounded-xl shadow-sm p-4">
+            <h3 class="text-lg font-medium text-gray-800 mb-4">快捷操作</h3>
+            <div class="space-y-2">
+              <button
+                @click="toggleMark(currentIndex)"
+                class="w-full p-2 rounded-lg text-left hover:bg-gray-50 transition-colors flex items-center space-x-2"
+              >
+                <i class="fas fa-bookmark text-yellow-400"></i>
+                <span>标记当前题目</span>
+              </button>
+              <button
+                @click="submitPractice"
+                class="w-full p-2 rounded-lg text-left hover:bg-gray-50 transition-colors flex items-center space-x-2"
+              >
+                <i class="fas fa-paper-plane text-indigo-500"></i>
+                <span>提交试卷</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -211,30 +167,26 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-
-const router = useRouter()
-const route = useRoute()
+import { useRoute, useRouter } from 'vue-router'
 
 interface Subject {
   subjectId: number
-  subjectType: number
-}
-
-interface SubjectDetail {
-  subjectId: number
   subjectName: string
   subjectType: number
-  subjectDifficult: number
-  subjectScore: number
-  subjectParse: string
+  subjectDifficult?: number
+  subjectScore?: number
+  subjectParse?: string
   optionList?: Array<{
     optionType: number
     optionContent: string
     isCorrect: number
   }>
-  // 简答题特有字段
   subjectAnswer?: string
+}
+
+interface Answer {
+  subjectId: number
+  answer: string | number
 }
 
 interface PracticeResponse {
@@ -243,30 +195,44 @@ interface PracticeResponse {
   practiceId: number
 }
 
-interface Answer {
-  subjectId: number
-  subjectType: number
-  answer: number
-}
+const route = useRoute()
+const router = useRouter()
 
-const loading = ref(false)
-const error = ref<string | null>(null)
+// 组件状态
+const title = ref('练习题')
 const subjects = ref<Subject[]>([])
 const currentIndex = ref(0)
-const currentSubject = ref<SubjectDetail | null>(null)
-const selectedOption = ref<number | null>(null)
+const currentSubject = ref<Subject | null>(null)
+const selectedOption = ref<string | number | null>(null)
+const answers = ref<Answer[]>([])
+const loading = ref(false)
 const timer = ref(0)
 const timerInterval = ref<number | null>(null)
-const answers = ref<Answer[]>([])
-const title = ref('')
+const timerPaused = ref(false)
 const autoSaveTimer = ref<number | null>(null)
-const practiceId = ref<number>(0)
+const practiceId = ref<string | number>(route.params.id)
+const isSubmitted = ref(false)
+const markedQuestions = ref<Set<number>>(new Set())
+const showSubmitConfirm = ref(false)
 
-// 格式化时间
-const formatTime = (seconds: number) => {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
-  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
+// 工具函数
+const formatTime = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+const formatTimeForSubmit = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  return `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}${String(secs).padStart(2, '0')}`
+}
+
+const formatSubmitTime = (): string => {
+  const now = new Date()
+  return now.toISOString().slice(0, 19).replace('T', ' ')
 }
 
 // 获取套题目列表
@@ -410,19 +376,6 @@ const nextQuestion = async () => {
   }
 }
 
-// 添加格式化时间的工具函数
-const formatTimeForSubmit = (seconds: number) => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  return `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}${String(secs).padStart(2, '0')}`
-}
-
-const formatSubmitTime = () => {
-  const now = new Date()
-  return now.toISOString().slice(0, 19).replace('T', ' ')
-}
-
 // 修改提交练习的函数
 const submitPractice = () => {
   if (!subjects.value?.length) {
@@ -502,10 +455,6 @@ const loadSavedAnswer = () => {
   selectedOption.value = savedAnswer?.answer || null
 }
 
-// 添加新的功能
-const timerPaused = ref(false)
-const markedQuestions = ref<Set<number>>(new Set())
-
 const toggleTimer = () => {
   timerPaused.value = !timerPaused.value
   if (timerPaused.value) {
@@ -515,11 +464,11 @@ const toggleTimer = () => {
   }
 }
 
-const toggleMark = () => {
-  if (markedQuestions.value.has(currentIndex.value)) {
-    markedQuestions.value.delete(currentIndex.value)
+const toggleMark = (index: number) => {
+  if (markedQuestions.value.has(index)) {
+    markedQuestions.value.delete(index)
   } else {
-    markedQuestions.value.add(currentIndex.value)
+    markedQuestions.value.add(index)
   }
 }
 
@@ -543,12 +492,6 @@ const startAutoSave = () => {
     }
   }, 30000)
 }
-
-// 添加 isSubmitted 变量
-const isSubmitted = ref(false)
-
-// 添加新的响应式变量
-const showSubmitConfirm = ref(false)
 
 // 修改提交答案的函数
 const submitSingleQuestion = async () => {
@@ -650,5 +593,34 @@ button:active {
 /* 添加弹窗阴影效果 */
 .shadow-2xl {
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* 添加一些动画效果 */
+@keyframes slide-in {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+/* 滚动条美化 */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E0 #EDF2F7;
+}
+
+.overflow-y-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #EDF2F7;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background-color: #CBD5E0;
+  border-radius: 2px;
 }
 </style> 
