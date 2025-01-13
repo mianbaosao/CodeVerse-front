@@ -17,7 +17,7 @@
           <!-- 题目标题和难度 -->
           <div class="p-6 border-b border-gray-200 flex justify-between items-center">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">两数之和</h1>
+              <h1 class="text-2xl font-bold text-gray-900">{{ titleInfo?.subjectName || '加载中...' }}</h1>
               <p class="mt-2 text-gray-600">题目编号：{{ problem?.subjectId }}</p>
             </div>
             <span :class="[
@@ -191,7 +191,16 @@ interface ProblemDetail {
   hints: string
 }
 
+interface TitleInfo {
+  subjectName: string
+  subjectDifficult: number
+  subjectType: number
+  subjectScore: number
+  labelName: string[]
+}
+
 const problem = ref<ProblemDetail | null>(null)
+const titleInfo = ref<TitleInfo | null>(null)
 
 // 添加代码编辑器相关的状态
 const selectedLanguage = ref('62')  // 默认选择 Java
@@ -217,6 +226,28 @@ const fetchProblemDetail = async () => {
     }
   } catch (error) {
     console.error('获取题目详情失败:', error)
+  }
+}
+
+// 获取题目名称
+const fetchTitleInfo = async () => {
+  try {
+    const response = await fetch('http://localhost:3010/subject/querySubjectInfo', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: route.params.id
+      })
+    })
+
+    const data = await response.json()
+    if (data.success) {
+      titleInfo.value = data.data
+    }
+  } catch (error) {
+    console.error('获取题目名称失败:', error)
   }
 }
 
@@ -433,8 +464,12 @@ const submitCode = async () => {
   }
 }
 
-onMounted(() => {
-  fetchProblemDetail()
+onMounted(async () => {
+  // 并行获取题目名称和详情
+  await Promise.all([
+    fetchTitleInfo(),
+    fetchProblemDetail()
+  ])
 })
 </script>
 
