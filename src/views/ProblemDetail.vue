@@ -41,7 +41,7 @@
                 <div class="flex items-center space-x-2">
                   <span class="text-gray-500">输入：</span>
                   <code class="bg-gray-100 px-2 py-1 rounded text-indigo-600">
-                    nums = {{ JSON.stringify(num) }}
+                   {{ JSON.stringify(num) }}
                   </code>
                 </div>
                 <div class="flex items-center space-x-2">
