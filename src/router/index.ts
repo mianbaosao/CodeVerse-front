@@ -12,6 +12,7 @@ import Community from '@/views/Community.vue'
 import AddProblem from '@/views/AddProblem.vue'
 import Practice from '@/views/Practice.vue'
 import PracticeDetail from '@/views/PracticeDetail.vue'
+import Interview from '@/views/Interview.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -80,6 +81,11 @@ const router = createRouter({
       path: '/practice/:id/summary',
       name: 'PracticeSummary',
       component: () => import('@/views/PracticeSummary.vue')
+    },
+    {
+      path: '/interview',
+      name: 'Interview',
+      component: Interview
     }
   ]
 }) as Router

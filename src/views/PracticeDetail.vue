@@ -166,27 +166,34 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
+// 类型定义
 interface Subject {
-  subjectId: number
+  subjectId: string
   subjectName: string
   subjectType: number
-  subjectDifficult?: number
-  subjectScore?: number
-  subjectParse?: string
-  optionList?: Array<{
-    optionType: number
-    optionContent: string
-    isCorrect: number
-  }>
-  subjectAnswer?: string
+  subjectDesc: string
+  optionList?: Option[]
+}
+
+interface Option {
+  optionType: number
+  optionContent: string
+  isCorrect: number
 }
 
 interface Answer {
-  subjectId: number
+  subjectId: string
   answer: string | number
+}
+
+interface SubmitResponse {
+  success: boolean
+  message?: string
+  data?: any
 }
 
 interface PracticeResponse {
@@ -195,32 +202,40 @@ interface PracticeResponse {
   practiceId: number
 }
 
-const route = useRoute()
+interface SubmitData {
+  practiceId: string | number
+  subjectId: string
+  answerContents: (string | number)[]
+  subjectType: number
+  timeUse: string
+}
+
+// 状态定义
+const route: RouteLocationNormalizedLoaded = useRoute()
 const router = useRouter()
 
-// 组件状态
-const title = ref('练习题')
+const title = ref<string>('')
 const subjects = ref<Subject[]>([])
-const currentIndex = ref(0)
+const currentIndex = ref<number>(0)
 const currentSubject = ref<Subject | null>(null)
 const selectedOption = ref<string | number | null>(null)
 const answers = ref<Answer[]>([])
-const loading = ref(false)
-const timer = ref(0)
-const timerInterval = ref<number | null>(null)
-const timerPaused = ref(false)
-const autoSaveTimer = ref<number | null>(null)
+const loading = ref<boolean>(false)
+const timer = ref<number>(0)
+const timerPaused = ref<boolean>(false)
+let timerInterval: ReturnType<typeof setInterval> | null = null
+const autoSaveTimer = ref<ReturnType<typeof setInterval> | null>(null)
 const practiceId = ref<string | number>(route.params.id)
-const isSubmitted = ref(false)
+const isSubmitted = ref<boolean>(false)
 const markedQuestions = ref<Set<number>>(new Set())
-const showSubmitConfirm = ref(false)
+const showSubmitConfirm = ref<boolean>(false)
 
 // 工具函数
 const formatTime = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  const secs = seconds % 60
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  const remainingSeconds = seconds % 60
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
 const formatTimeForSubmit = (seconds: number): string => {
@@ -441,9 +456,13 @@ const getScoreDetail = async () => {
 
 // 时器
 const startTimer = () => {
-  timerInterval.value = window.setInterval(() => {
-    timer.value++
-  }, 1000)
+  if (!timerInterval) {
+    timerInterval = setInterval(() => {
+      if (!timerPaused.value) {
+        timer.value++
+      }
+    }, 1000)
+  }
 }
 
 // 修改 prevQuestion 和 nextQuestion 函数，加载已保存的答案
@@ -457,8 +476,9 @@ const loadSavedAnswer = () => {
 
 const toggleTimer = () => {
   timerPaused.value = !timerPaused.value
-  if (timerPaused.value) {
-    clearInterval(timerInterval.value!)
+  if (timerPaused.value && timerInterval) {
+    clearInterval(timerInterval)
+    timerInterval = null
   } else {
     startTimer()
   }
@@ -472,7 +492,7 @@ const toggleMark = (index: number) => {
   }
 }
 
-const jumpToQuestion = async (index: number) => {
+const jumpToQuestion = async (index: number): Promise<void> => {
   if (!subjects.value || index >= subjects.value.length) return
   
   currentIndex.value = index
@@ -493,8 +513,8 @@ const startAutoSave = () => {
   }, 30000)
 }
 
-// 修改提交答案的函数
-const submitSingleQuestion = async () => {
+// 提交单个题目
+const submitSingleQuestion = async (): Promise<void> => {
   if (!currentSubject.value || selectedOption.value === null) return
 
   try {
@@ -510,7 +530,7 @@ const submitSingleQuestion = async () => {
       })
     })
 
-    const data = await response.json()
+    const data: SubmitResponse = await response.json()
     if (!data.success) {
       throw new Error(data.message || '提交答案失败')
     }
@@ -523,24 +543,35 @@ const submitSingleQuestion = async () => {
 onMounted(() => {
   fetchPracticeSubjects()
   startTimer()
-  startAutoSave() // 启动自动保存
+  startAutoSave()
 
-  window.addEventListener('beforeunload', (e) => {
-    if (answers.value.length > 0 && !isSubmitted.value) {
-      e.preventDefault()
-      e.returnValue = ''
-    }
-  })
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
 
 onUnmounted(() => {
-  if (timerInterval.value) {
-    clearInterval(timerInterval.value)
+  if (timerInterval) {
+    clearInterval(timerInterval)
   }
   if (autoSaveTimer.value) {
     clearInterval(autoSaveTimer.value)
   }
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 })
+
+// 清理定时器
+watch(() => route.path, () => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+  }
+})
+
+// 添加beforeunload处理函数
+const handleBeforeUnload = (e: BeforeUnloadEvent): void => {
+  if (answers.value.length > 0 && !isSubmitted.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
 </script>
 
 <style scoped>
