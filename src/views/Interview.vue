@@ -435,7 +435,7 @@ const getConnectionMessage = (state: RTCPeerConnectionState): string => {
     'new': '准备连接',
     'connecting': '正在连接...',
     'connected': '已连接',
-    'disconnected': '连接断开',
+    'disconnected':  '连接断开',
     'failed': '连接失败',
     'closed': '连接已关闭'
   }

@@ -481,6 +481,82 @@ const semesters = ref<Semester[]>([
       }
     ],
     progress: 0
+  },
+  {
+    id: 3,
+    name: '大二上学期',
+    isActive: false,
+    courses: [
+      {
+        id: 7,
+        title: '微服务架构精进',
+        description: '学习Spring Cloud、Docker等微服务技术栈',
+        icon: 'fas fa-cloud',
+        isActive: false,
+        isCompleted: false,
+        videoLink: 'https://www.bilibili.com/video/BV1LQ4y127n4'
+      },
+      {
+        id: 8,
+        title: 'Java面试题总结',
+        description: '系统学习Java核心技术原理，准备面试八股文',
+        icon: 'fas fa-book',
+        isActive: false,
+        isCompleted: false,
+        practiceLink: 'https://github.com/CyC2018/CS-Notes'
+      },
+      {
+        id: 9,
+        title: '简历优化和投递',
+        description: '完善项目经验，制作简历，寒假投递实习岗位',
+        icon: 'fas fa-paper-plane',
+        isActive: false,
+        isCompleted: false
+      }
+    ],
+    progress: 0
+  },
+  {
+    id: 4,
+    name: '大二下学期',
+    isActive: false,
+    courses: [
+      {
+        id: 10,
+        title: '算法刷题打卡',
+        description: '保持每日刷题，巩固算法能力',
+        icon: 'fas fa-laptop-code',
+        isActive: false,
+        isCompleted: false,
+        practiceLink: 'https://leetcode.cn/problemset/all/'
+      },
+      {
+        id: 11,
+        title: '面试题深入',
+        description: '深入理解技术原理，积累面试经验',
+        icon: 'fas fa-brain',
+        isActive: false,
+        isCompleted: false,
+        videoLink: 'https://www.bilibili.com/video/BV1yT411H7YK'
+      },
+      {
+        id: 12,
+        title: '实习准备',
+        description: '投递简历，准备面试，争取暑期实习机会',
+        icon: 'fas fa-briefcase',
+        isActive: false,
+        isCompleted: false
+      },
+      {
+        id: 13,
+        title: '项目深化',
+        description: '改进现有项目，添加更多功能，提升技术深度',
+        icon: 'fas fa-layer-group',
+        isActive: false,
+        isCompleted: false
+      }
+    ],
+    progress: 0
   }
 ])
 
@@ -542,7 +618,14 @@ const getCourseGradient = (courseId: number, semesterId: number): string => {
     3: 'from-purple-100/30 to-violet-100/30 hover:from-purple-200/50 hover:to-violet-200/50', // LeetCode
     4: 'from-orange-100/30 to-amber-100/30 hover:from-orange-200/50 hover:to-amber-200/50', // JavaWeb
     5: 'from-pink-100/30 to-rose-100/30 hover:from-pink-200/50 hover:to-rose-200/50', // 项目实战
-    6: 'from-cyan-100/30 to-sky-100/30 hover:from-cyan-200/50 hover:to-sky-200/50' // 独立项目
+    6: 'from-cyan-100/30 to-sky-100/30 hover:from-cyan-200/50 hover:to-sky-200/50', // 独立项目
+    7: 'from-teal-100/30 to-cyan-100/30 hover:from-teal-200/50 hover:to-cyan-200/50', // 微服务
+    8: 'from-yellow-100/30 to-amber-100/30 hover:from-yellow-200/50 hover:to-amber-200/50', // 面试题
+    9: 'from-red-100/30 to-rose-100/30 hover:from-red-200/50 hover:to-rose-200/50', // 简历
+    10: 'from-lime-100/30 to-green-100/30 hover:from-lime-200/50 hover:to-green-200/50', // 算法
+    11: 'from-fuchsia-100/30 to-pink-100/30 hover:from-fuchsia-200/50 hover:to-pink-200/50', // 面试深入
+    12: 'from-sky-100/30 to-blue-100/30 hover:from-sky-200/50 hover:to-blue-200/50', // 实习
+    13: 'from-violet-100/30 to-purple-100/30 hover:from-violet-200/50 hover:to-purple-200/50' // 项目
   }
   return gradients[courseId] || 'from-gray-100/30 to-slate-100/30 hover:from-gray-200/50 hover:to-slate-200/50'
 }
@@ -570,7 +653,14 @@ const getCourseIconClass = (course: Course): string => {
     3: 'bg-purple-100 text-purple-500',
     4: 'bg-orange-100 text-orange-500',
     5: 'bg-pink-100 text-pink-500',
-    6: 'bg-cyan-100 text-cyan-500'
+    6: 'bg-cyan-100 text-cyan-500',
+    7: 'bg-teal-100 text-teal-500',
+    8: 'bg-yellow-100 text-yellow-600',
+    9: 'bg-red-100 text-red-500',
+    10: 'bg-lime-100 text-lime-600',
+    11: 'bg-fuchsia-100 text-fuchsia-500',
+    12: 'bg-sky-100 text-sky-500',
+    13: 'bg-violet-100 text-violet-500'
   }
   return iconGradients[course.id] || 'bg-gray-100 text-gray-500'
 }
@@ -598,16 +688,27 @@ const handleCardHover = (semesterId: number, isHovered: boolean): void => {
   }
 }
 
-// 修改课程卡片点击处理函数
+// 添加点击反馈效果
 const handleCourseClick = (course: Course): void => {
-  // 如果有视频链接或练习链接，直接跳转
-  if (course.videoLink) {
-    window.open(course.videoLink, '_blank')
-    return
-  }
-  if (course.practiceLink) {
-    window.open(course.practiceLink, '_blank')
-    return
+  // 添加点击波纹效果
+  const ripple = document.createElement('div')
+  ripple.className = 'ripple-effect'
+  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  ripple.style.left = `${x}px`
+  ripple.style.top = `${y}px`
+  event.currentTarget.appendChild(ripple)
+  
+  // 移除波纹效果
+  setTimeout(() => ripple.remove(), 1000)
+
+  // 如果有链接，添加跳转延迟以显示动画
+  if (course.videoLink || course.practiceLink) {
+    const link = course.videoLink || course.practiceLink
+    setTimeout(() => {
+      window.open(link, '_blank')
+    }, 200)
   }
 }
 
@@ -619,5 +720,12 @@ const handleMouseMove = (event: MouseEvent): void => {
   const y = ((event.clientY - rect.top) / rect.height) * 100
   target.style.setProperty('--x', `${x}%`)
   target.style.setProperty('--y', `${y}%`)
+}
+
+// 添加卡片悬浮状态管理
+const hoveredCourseId = ref<number | null>(null)
+
+const handleCourseHover = (courseId: number, isHovered: boolean): void => {
+  hoveredCourseId.value = isHovered ? courseId : null
 }
 </script> 
