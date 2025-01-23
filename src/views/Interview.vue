@@ -98,8 +98,8 @@
                 <i class="fas fa-user-tie text-indigo-600"></i>
               </div>
               <div>
-                <h3 class="font-medium text-gray-900">面试官: John Doe</h3>
-                <p class="text-sm text-gray-500">高级前端工程师</p>
+                <h3 class="font-medium text-gray-900">面试官: Mian Bao</h3>
+                <p class="text-sm text-gray-500">高级后端开发工程师</p>
               </div>
             </div>
             <div class="text-right">

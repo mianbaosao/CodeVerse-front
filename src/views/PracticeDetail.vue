@@ -66,17 +66,127 @@
             <!-- 题目类型和难度 -->
             <div class="flex items-center space-x-4 mb-6">
               <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
-                {{ currentSubject?.subjectType === 1 ? '选择题' : '简答题' }}
+                {{ getSubjectTypeLabel(currentSubject?.subjectType) }}
+              </span>
+              <span :class="[
+                'px-3 py-1 rounded-full text-sm',
+                getDifficultyClass(currentSubject?.subjectDifficult)
+              ]">
+                {{ getDifficultyLabel(currentSubject?.subjectDifficult) }}
               </span>
               <div class="flex items-center text-sm text-gray-500">
-                <i class="fas fa-clock mr-2"></i>
-                <span>建议用时：5分钟</span>
+                <i class="fas fa-star mr-2"></i>
+                <span>{{ currentSubject?.subjectScore || 0 }}分</span>
               </div>
             </div>
 
-            <!-- 题目内容部分保持不变 -->
-            ...
+            <!-- 题目内容 -->
+            <div v-if="currentSubject" class="space-y-6">
+              <!-- 题目标题和描述 -->
+              <div>
+                <h3 class="text-xl font-medium text-gray-900 mb-4">
+                  {{ currentSubject.subjectName }}
+                </h3>
+                <div class="flex flex-wrap gap-2 mb-4">
+                  <span v-for="label in currentSubject.labelName" 
+                    :key="label"
+                    class="px-2 py-1 bg-indigo-100 text-indigo-600 rounded-full text-sm"
+                  >
+                    {{ label }}
+                  </span>
+                </div>
+              </div>
 
+              <!-- 选择题选项 -->
+              <div v-if="[1, 2].includes(currentSubject.subjectType)" class="space-y-4">
+                <div 
+                  v-for="option in currentSubject.optionList" 
+                  :key="option.optionType"
+                  class="relative"
+                >
+                  <label 
+                    class="flex items-center p-4 rounded-lg cursor-pointer transition-all duration-300"
+                    :class="[
+                      isOptionSelected(option.optionType)
+                        ? 'bg-indigo-50 border-2 border-indigo-200'
+                        : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                    ]"
+                  >
+                    <input
+                      :type="currentSubject.subjectType === 1 ? 'radio' : 'checkbox'"
+                      :name="'option'"
+                      :value="option.optionType"
+                      v-model="selectedOption"
+                      class="hidden"
+                      @change="handleOptionSelect(option.optionType)"
+                    >
+                    <div class="flex items-center space-x-3 flex-1">
+                      <div 
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium"
+                        :class="[
+                          isOptionSelected(option.optionType)
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-gray-200 text-gray-600'
+                        ]"
+                      >
+                        {{ String.fromCharCode(64 + option.optionType) }}
+                      </div>
+                      <span class="text-gray-700">{{ option.optionContent }}</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 判断题选项 -->
+              <div v-else-if="currentSubject.subjectType === 3" class="space-y-4">
+                <div class="flex space-x-4">
+                  <label 
+                    v-for="option in [
+                      { value: 1, label: '正确' },
+                      { value: 2, label: '错误' }
+                    ]"
+                    :key="option.value"
+                    class="flex-1 p-4 rounded-lg cursor-pointer transition-all duration-300"
+                    :class="[
+                      isOptionSelected(option.value)
+                        ? 'bg-indigo-50 border-2 border-indigo-200'
+                        : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
+                    ]"
+                  >
+                    <input
+                      type="radio"
+                      :name="'judge'"
+                      :value="option.value"
+                      v-model="selectedOption"
+                      class="hidden"
+                      @change="handleOptionSelect(option.value)"
+                    >
+                    <div class="text-center">{{ option.label }}</div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 简答题输入框 -->
+              <div v-else-if="currentSubject.subjectType === 4" class="space-y-4">
+                <textarea
+                  v-model="answerContent"
+                  rows="6"
+                  class="w-full p-4 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                  placeholder="请输入你的答案..."
+                  @input="handleAnswerInput"
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- 加载状态 -->
+            <div v-else-if="loading" class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-8 w-8 border-2 border-indigo-500 border-t-transparent"></div>
+            </div>
+
+            <!-- 错误状态 -->
+            <div v-else class="text-center py-12 text-gray-500">
+              暂无题目内容
+            </div>
           </div>
         </div>
 
@@ -91,9 +201,7 @@
                 :key="subject.subjectId"
                 class="w-8 h-8 rounded-lg flex items-center justify-center text-sm cursor-pointer transition-all"
                 :class="[
-                  answers.some(a => a.subjectId === subject.subjectId)
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  getQuestionStatusClass(subject.subjectId),
                   currentIndex === index ? 'ring-2 ring-indigo-500' : ''
                 ]"
                 @click="jumpToQuestion(index)"
@@ -172,11 +280,15 @@ import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
 // 类型定义
 interface Subject {
+  id: number
   subjectId: string
   subjectName: string
   subjectType: number
   subjectDesc: string
+  subjectDifficult: number
+  subjectScore: number
   optionList?: Option[]
+  labelName?: string[]
 }
 
 interface Option {
@@ -187,7 +299,8 @@ interface Option {
 
 interface Answer {
   subjectId: string
-  answer: string | number
+  answer: number[]
+  isSubmitted: boolean
 }
 
 interface SubmitResponse {
@@ -198,7 +311,10 @@ interface SubmitResponse {
 
 interface PracticeResponse {
   title: string
-  subjectList: Subject[]
+  subjectList: {
+    subjectId: number  // 修改为 number 类型
+    subjectType: number
+  }[]
   practiceId: number
 }
 
@@ -218,7 +334,7 @@ const title = ref<string>('')
 const subjects = ref<Subject[]>([])
 const currentIndex = ref<number>(0)
 const currentSubject = ref<Subject | null>(null)
-const selectedOption = ref<string | number | null>(null)
+const selectedOption = ref<number[]>([])
 const answers = ref<Answer[]>([])
 const loading = ref<boolean>(false)
 const timer = ref<number>(0)
@@ -229,6 +345,40 @@ const practiceId = ref<string | number>(route.params.id)
 const isSubmitted = ref<boolean>(false)
 const markedQuestions = ref<Set<number>>(new Set())
 const showSubmitConfirm = ref<boolean>(false)
+const answerContent = ref('')
+
+// 添加本地存储的键名常量
+const STORAGE_KEY = 'practice_answers'
+
+// 添加加载已保存答案的函数
+const loadSavedAnswers = () => {
+  const savedAnswers = localStorage.getItem(STORAGE_KEY)
+  if (savedAnswers) {
+    try {
+      const parsed = JSON.parse(savedAnswers)
+      // 只加载当前练习的答案
+      const practiceAnswers = parsed[practiceId.value] || []
+      answers.value = practiceAnswers
+    } catch (error) {
+      console.error('加载已保存答案失败:', error)
+    }
+  }
+}
+
+// 添加保存答案到本地存储的函数
+const saveAnswersToStorage = () => {
+  try {
+    const savedAnswers = localStorage.getItem(STORAGE_KEY)
+    const allAnswers = savedAnswers ? JSON.parse(savedAnswers) : {}
+    
+    // 更新当前练习的答案
+    allAnswers[practiceId.value] = answers.value
+    
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(allAnswers))
+  } catch (error) {
+    console.error('保存答案失败:', error)
+  }
+}
 
 // 工具函数
 const formatTime = (seconds: number): string => {
@@ -242,12 +392,37 @@ const formatTimeForSubmit = (seconds: number): string => {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const secs = seconds % 60
-  return `${String(hours).padStart(2, '0')}${String(minutes).padStart(2, '0')}${String(secs).padStart(2, '0')}`
+  
+  return [hours, minutes, secs]
+    .map(num => num.toString().padStart(2, '0'))
+    .join('')
 }
 
 const formatSubmitTime = (): string => {
   const now = new Date()
   return now.toISOString().slice(0, 19).replace('T', ' ')
+}
+
+const getSubjectTypeLabel = (type?: number): string => {
+  const types: Record<number, string> = {
+    1: '单选题',
+    2: '多选题',
+    3: '判断题',
+    4: '简答题'
+  }
+  return types[type || 0] || '未知类型'
+}
+
+const getDifficultyLabel = (difficult?: number): string => {
+  return ['', '中等', '困难'][difficult || 0] || '未知'
+}
+
+const getDifficultyClass = (difficult?: number): string => {
+  const classes = {
+    1: 'bg-yellow-100 text-yellow-800',
+    2: 'bg-red-100 text-red-800'
+  }
+  return classes[difficult as keyof typeof classes] || 'bg-gray-100 text-gray-800'
 }
 
 // 获取套题目列表
@@ -291,7 +466,6 @@ const fetchCurrentSubject = async () => {
     loading.value = true
     const subject = subjects.value[currentIndex.value]
     
-    // 根据题目类型调用不同的接口
     const response = await fetch('http://localhost:3010/subject/querySubjectInfo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -305,33 +479,71 @@ const fetchCurrentSubject = async () => {
       throw new Error(data.message || '获取题目失败')
     }
 
+    // 更新当前题目对象
     currentSubject.value = data.data
-    selectedOption.value = null
-
-    // 检查是否已有答案
-    const existingAnswer = answers.value.find(a => a.subjectId === subject.subjectId)
-    if (existingAnswer) {
-      selectedOption.value = existingAnswer.answer
+    
+    // 加载已保存的答案
+    const savedAnswer = answers.value.find(a => a.subjectId === subject.subjectId)
+    if (savedAnswer && Array.isArray(savedAnswer.answer)) {
+      selectedOption.value = savedAnswer.answer
+    } else {
+      selectedOption.value = [] // 确保重置为空数组
     }
+
   } catch (error) {
     console.error('获取题目详情失败:', error)
-    alert('获取题目失败：' + (error instanceof Error ? error.message : '请重试'))
+    showError('获取题目失败：' + (error instanceof Error ? error.message : '请重试'))
   } finally {
     loading.value = false
   }
 }
 
-// 修改选项选择的处理函数
-const handleOptionSelect = (optionType: number) => {
-  selectedOption.value = optionType
+// 修改跳转到指定题目的函数
+const jumpToQuestion = async (index: number): Promise<void> => {
+  if (!subjects.value || index >= subjects.value.length) return
   
-  // 更新本地答案记录
-  const currentSubject = subjects.value[currentIndex.value]
-  const answerIndex = answers.value.findIndex(a => a.subjectId === currentSubject.subjectId)
-  const answer = {
-    subjectId: currentSubject.subjectId,
-    subjectType: currentSubject.subjectType,
-    answer: optionType
+  currentIndex.value = index
+  await fetchCurrentSubject() // 获取题目时会自动加载已保存的答案
+}
+
+// 修改获取题目状态样式的函数
+const getQuestionStatusClass = (subjectId: string | number) => {
+  const answer = answers.value.find(a => a.subjectId === subjectId)
+  if (answer) {
+    if (answer.isSubmitted) {
+      return 'bg-blue-500 text-white' // 已提交的改为蓝色
+    }
+    return 'bg-yellow-500 text-white' // 已作答但未提交
+  }
+  return 'bg-gray-100 text-gray-600 hover:bg-gray-200' // 未作答
+}
+
+// 修改选项选择的处理函数
+const handleOptionSelect = async (optionType: number) => {
+  if (!currentSubject.value) return
+  
+  // 更新当前题目的选项
+  if (currentSubject.value.subjectType === 2) {
+    // 多选题处理
+    const newSelectedOptions = [...selectedOption.value]
+    const index = newSelectedOptions.indexOf(optionType)
+    if (index === -1) {
+      newSelectedOptions.push(optionType)
+    } else {
+      newSelectedOptions.splice(index, 1)
+    }
+    selectedOption.value = newSelectedOptions.sort((a, b) => a - b)
+  } else {
+    // 单选题和判断题处理
+    selectedOption.value = [optionType]
+  }
+
+  // 更新本地暂存
+  const answerIndex = answers.value.findIndex(a => a.subjectId === currentSubject.value.subjectId)
+  const answer: Answer = {
+    subjectId: currentSubject.value.subjectId,
+    answer: selectedOption.value,
+    isSubmitted: false
   }
 
   if (answerIndex === -1) {
@@ -339,20 +551,29 @@ const handleOptionSelect = (optionType: number) => {
   } else {
     answers.value[answerIndex] = answer
   }
+
+  // 保存到本地存储
+  localStorage.setItem('practiceAnswers', JSON.stringify(answers.value))
+
+  // 选择后立即提交答案
+  await submitSingleAnswer()
 }
 
 // 上一题
 const prevQuestion = async () => {
   if (currentIndex.value > 0) {
+    // 切换题目前重置选项状态
+    selectedOption.value = []
+    answerContent.value = ''
+    
     currentIndex.value--
     await fetchCurrentSubject()
-    loadSavedAnswer()
   }
 }
 
-// 修改下一题函数，保持简单的提交逻辑
+// 修改下一题函数
 const nextQuestion = async () => {
-  if (!subjects.value?.length || selectedOption.value === null) return
+  if (!subjects.value?.length || selectedOption.value.length === 0) return
   
   if (currentIndex.value < subjects.value.length - 1) {
     try {
@@ -366,7 +587,7 @@ const nextQuestion = async () => {
         body: JSON.stringify({
           practiceId: practiceId.value,
           subjectId: currentSubject.subjectId,
-          answerContents: [selectedOption.value],
+          answerContents: selectedOption.value,
           subjectType: currentSubject.subjectType,
           timeUse: formatTimeForSubmit(timer.value)
         })
@@ -377,11 +598,13 @@ const nextQuestion = async () => {
         throw new Error(data.message || '提交答案失败')
       }
 
+      // 切换题目前重置选项状态
+      selectedOption.value = []
+      answerContent.value = ''
+
       // 提交成功后再进入下一题
       currentIndex.value++
       await fetchCurrentSubject()
-      loadSavedAnswer()
-      
     } catch (error) {
       console.error('提交答案失败:', error)
       alert('提交答案失败，请重试')
@@ -465,15 +688,6 @@ const startTimer = () => {
   }
 }
 
-// 修改 prevQuestion 和 nextQuestion 函数，加载已保存的答案
-const loadSavedAnswer = () => {
-  if (!subjects.value || !subjects.value[currentIndex.value]) return
-  
-  const currentSubjectId = subjects.value[currentIndex.value].subjectId
-  const savedAnswer = answers.value.find(a => a.subjectId === currentSubjectId)
-  selectedOption.value = savedAnswer?.answer || null
-}
-
 const toggleTimer = () => {
   timerPaused.value = !timerPaused.value
   if (timerPaused.value && timerInterval) {
@@ -492,20 +706,12 @@ const toggleMark = (index: number) => {
   }
 }
 
-const jumpToQuestion = async (index: number): Promise<void> => {
-  if (!subjects.value || index >= subjects.value.length) return
-  
-  currentIndex.value = index
-  await fetchCurrentSubject()
-  loadSavedAnswer()
-}
-
 // 修改自动保存的逻辑
 const startAutoSave = () => {
   autoSaveTimer.value = window.setInterval(async () => {
-    if (selectedOption.value !== null && !isSubmitted.value) {
+    if (selectedOption.value.length > 0 && !isSubmitted.value) {
       try {
-        await submitSingleQuestion()
+        await submitSingleAnswer()
       } catch (error) {
         console.error('自动保存失败:', error)
       }
@@ -513,34 +719,114 @@ const startAutoSave = () => {
   }, 30000)
 }
 
-// 提交单个题目
-const submitSingleQuestion = async (): Promise<void> => {
-  if (!currentSubject.value || selectedOption.value === null) return
+// 添加错误提示函数
+const showError = (message: string) => {
+  // 这里可以替换成你喜欢的提示方式，比如 Element Plus 的 Message 组件
+  alert(message)
+}
+
+// 修改提交单个题目的函数
+const submitSingleAnswer = async () => {
+  if (!currentSubject.value || selectedOption.value.length === 0) return
 
   try {
+    const timeStr = formatTimeForSubmit(timer.value)
+    const authInfo = localStorage.getItem('userAuthInfo')
+    const { tokenValue = '' } = authInfo ? JSON.parse(authInfo) : {}
+
     const response = await fetch('http://localhost:3013/practice/detail/submitSubject', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Satoken': tokenValue ? `mianbao ${tokenValue}` : ''
+      },
       body: JSON.stringify({
-        practiceId: practiceId.value,
-        subjectId: currentSubject.value.subjectId,
-        answerContents: [selectedOption.value],
+        practiceId: Number(practiceId.value),
+        subjectId: Number(currentSubject.value.id),
+        answerContents: selectedOption.value,
         subjectType: currentSubject.value.subjectType,
-        timeUse: formatTimeForSubmit(timer.value)
+        timeUse: timeStr
       })
     })
 
-    const data: SubmitResponse = await response.json()
+    const data = await response.json()
     if (!data.success) {
-      throw new Error(data.message || '提交答案失败')
+      throw new Error(data.message || '提交失败')
     }
+
+    // 提交成功后更新本地答案状态
+    const answerIndex = answers.value.findIndex(a => a.subjectId === currentSubject.value.subjectId)
+    if (answerIndex !== -1) {
+      answers.value[answerIndex].isSubmitted = true
+      // 更新本地存储
+      localStorage.setItem('practiceAnswers', JSON.stringify(answers.value))
+    }
+
   } catch (error) {
     console.error('提交答案失败:', error)
-    throw error
+    showError('答案已暂存，但提交失败：' + (error instanceof Error ? error.message : '请检查网络后重试'))
   }
 }
 
+// 修改监听逻辑，移除自动提交
+watch([selectedOption, answerContent], () => {
+  const currentSubject = subjects.value?.[currentIndex.value]
+  if (!currentSubject) return
+
+  if (currentSubject.subjectType === 4) {
+    // 简答题，当内容变化时更新本地答案
+    if (answerContent.value.trim()) {
+      const answerIndex = answers.value.findIndex(a => a.subjectId === currentSubject.subjectId)
+      const answer = {
+        subjectId: currentSubject.subjectId,
+        subjectType: currentSubject.subjectType,
+        answer: [answerContent.value]
+      }
+
+      if (answerIndex === -1) {
+        answers.value.push(answer)
+      } else {
+        answers.value[answerIndex] = answer
+      }
+    }
+  }
+})
+
+// 处理简答题输入
+const handleAnswerInput = () => {
+  if (!currentSubject.value || currentSubject.value.subjectType !== 4) return
+  
+  // 更新本地答案记录
+  const answerIndex = answers.value.findIndex(a => a.subjectId === currentSubject.value.subjectId)
+  const answer = {
+    subjectId: currentSubject.value.subjectId,
+    subjectType: currentSubject.value.subjectType,
+    answer: [answerContent.value]
+  }
+
+  if (answerIndex === -1) {
+    answers.value.push(answer)
+  } else {
+    answers.value[answerIndex] = answer
+  }
+}
+
+// 修改检查选项是否选中的函数
+const isOptionSelected = (optionType: number): boolean => {
+  // 确保 selectedOption.value 是数组
+  if (!Array.isArray(selectedOption.value)) {
+    return false
+  }
+  return selectedOption.value.includes(optionType)
+}
+
 onMounted(() => {
+  // 从本地存储加载已保存的答案
+  const savedAnswers = localStorage.getItem('practiceAnswers')
+  if (savedAnswers) {
+    answers.value = JSON.parse(savedAnswers)
+  }
+  
   fetchPracticeSubjects()
   startTimer()
   startAutoSave()
