@@ -330,7 +330,7 @@ const menuItems: MenuItem[] = [
   { name: '学习路线', path: '/learn', icon: 'fas fa-road' },
   { name: '套卷练习', path: '/practice', icon: 'fas fa-book' },
   { name: '模拟面试', path: '/interview', icon: 'fas fa-comments' },
-  { name: '社区', path: '/community', icon: 'fas fa-users' },
+  { name: 'GPT', path: '/community', icon: 'fas fa-users' },
   { name: '排行榜', path: '/leaderboard', icon: 'fas fa-trophy' }
 ]
 
